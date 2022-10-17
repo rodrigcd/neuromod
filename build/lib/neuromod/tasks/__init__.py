@@ -1,1 +1,1 @@
-from affine_gaussian import AffineCorrelatedGaussian
+__all__ = ["affine_gaussian", "multi_dim_gaussian"]

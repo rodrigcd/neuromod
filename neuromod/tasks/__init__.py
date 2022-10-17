@@ -1,1 +1,2 @@
-from affine_gaussian import AffineCorrelatedGaussian
+from .affine_gaussian import AffineCorrelatedGaussian
+from .multi_dim_gaussian import MultiDimGaussian
