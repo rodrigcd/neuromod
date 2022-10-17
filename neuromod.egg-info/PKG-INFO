@@ -1,4 +1,4 @@
-Metadata-Version: 1.0
+Metadata-Version: 2.1
 Name: neuromod
 Version: 0.0.1
 Summary: maximizing value function
@@ -6,5 +6,7 @@ Home-page: https://github.com/rodrigcd/neuromod
 Author: Rodrigo Carrasco
 Author-email: rodrigo.carrasco.davis@gmail.com
 License: UNKNOWN
-Description: UNKNOWN
 Platform: UNKNOWN
+
+UNKNOWN
+
