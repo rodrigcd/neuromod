@@ -1,1 +1,1 @@
-__all__ = ["non_linear_net"]
+from .non_linear_net import NonLinearNet

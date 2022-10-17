@@ -1,8 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from .base_task import BaseTask
 
 
-class MultiDimGaussian(object):
+class MultiDimGaussian(BaseTask):
 
     def __init__(self, mu_vec=None, covariance=None, max_mean=2.0, max_std=1.0, batch_size=128, gaussian_dim=4):
         if mu_vec is not None:

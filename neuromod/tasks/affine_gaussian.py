@@ -1,7 +1,8 @@
 import numpy as np
+from .base_task import BaseTask
 
 
-class AffineCorrelatedGaussian(object):
+class AffineCorrelatedGaussian(BaseTask):
 
     def __init__(self, mu_vec=(2.0, 2.0), sigma_vec=(1.0, 1.0), dependence_parameter=0.5, batch_size=128):
         self.mu = mu_vec

@@ -1,7 +1,8 @@
 import torch
+from .base_network import BaseNetwork
 
 
-class NonLinearNet(object):
+class NonLinearNet(BaseNetwork):
 
     def __init__(self, input_dim, output_dim, hidden_dim, learning_rate=1e-5, reg_coef=0.1, W1_0=None, W2_0=None,
                  intrinsic_noise=1.0):
