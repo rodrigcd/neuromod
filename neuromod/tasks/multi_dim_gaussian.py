@@ -15,14 +15,14 @@ class MultiDimGaussian(BaseTask):
             self.input_dim = len(self.mu) + 1
             self.covariance = np.identity(self.input_dim-1)*max_std
         self.batch_size = batch_size
-        self.output_size = 2
+        self.output_dim = 2
 
     def sample_batch(self):
         y_sign = 1 - 2 * np.random.binomial(1, 0.5, size=self.batch_size)
         x_normal = np.random.multivariate_normal(np.zeros(self.input_dim-1), cov=self.covariance, size=self.batch_size)
         x = x_normal + self.mu[np.newaxis, :]*y_sign[:, np.newaxis]
         affine_space_x = np.ones(shape=(self.batch_size, 1))
-        y = np.zeros((self.batch_size, self.output_size))
+        y = np.zeros((self.batch_size, self.output_dim))
         y_hot = (y_sign + 1)/2
         y[np.arange(self.batch_size), y_hot.astype(int)] = 1
         return np.concatenate([x, affine_space_x], axis=1), y
