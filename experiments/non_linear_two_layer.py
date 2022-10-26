@@ -9,12 +9,12 @@ from neuromod.utils import save_var, get_date_time
 
 
 def main():
-    run_name = "test_experiment"
+    run_name = "non_linear_correlated_gaussian_long_300"
     results_path = "../results"
 
-    n_steps = 3000
+    n_steps = 6000
     save_weights_every = 20
-    iter_control = 10
+    iter_control = 300
 
     results_dict = {}
 

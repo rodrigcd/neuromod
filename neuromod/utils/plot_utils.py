@@ -23,6 +23,14 @@ def plot_weight_ev(flat_W_t, flat_eq_W_t, sim_iters, eq_iters, title=""):
     return weight_plot
 
 
+def plot_control(flat_G_t, eq_iters, title=""):
+    control_plot = figure(x_axis_label="iters", y_axis_label="G(t) modulation", title=title)
+    for i in range(np.min([flat_G_t.shape[-1], 20])):
+        control_plot.line(eq_iters, flat_G_t[:, i], line_width=3, color=Category20[20][i])
+    # weight_plot.output_backend = "svg"
+    return control_plot
+
+
 def plot_lines(x_vals, y_val_list=(), labels=(), alphas=(), colors=(), plot_size=(800, 500), x_axis_label="iters",
                y_axis_label="Loss", line_width=3):
     s = figure(x_axis_label=x_axis_label, y_axis_label=y_axis_label, width=plot_size[0], height=plot_size[1])
@@ -44,3 +52,23 @@ def plot_lines(x_vals, y_val_list=(), labels=(), alphas=(), colors=(), plot_size
 
         s.line(x_vals, loss, line_width=line_width, alpha=alpha, legend_label=label, color=color)
     return s
+
+
+def plot_net_reward(x_vals, losses=(), control_costs=(), reward_convertion=1.0, labels=(), alphas=(), colors=(),
+                    y_axis_label=("Net reward (+offset)", "Cumulated net reward"), plot_size=(800, 500)):
+        iRR = [-reward_convertion*loss for loss in losses]
+
+        net_rewards = [iRR[i]-control_costs[i] for i in range(len(losses))]
+        net_r_mins = [np.amin(net_rewards[i]) for i in range(len(losses))]
+        offset = np.amin(net_r_mins)
+        s = plot_lines(x_vals=x_vals, y_val_list=net_rewards-offset, labels=labels, alphas=alphas, colors=colors,
+                       y_axis_label=y_axis_label[0])
+        s.legend.location = "bottom_right"
+
+        cumulated_net_reward = [np.cumsum(net_rewards[i]-offset) for i in range(len(losses))]
+        s2 = plot_lines(x_vals=x_vals, y_val_list=cumulated_net_reward, labels=labels, alphas=alphas, colors=colors,
+                        y_axis_label=y_axis_label[1])
+        s2.legend.location = "bottom_right"
+
+        grid = gridplot([s, s2], ncols=2, width=plot_size[0], height=plot_size[1])
+        return grid, net_rewards, offset

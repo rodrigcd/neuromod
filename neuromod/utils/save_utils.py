@@ -1,6 +1,7 @@
 import pickle
 import os
 from datetime import datetime
+import pandas as pd
 
 
 def check_dir(path):
@@ -20,6 +21,12 @@ def get_date_time():
     dt_string = now.strftime("%d-%m-%Y_%H-%M-%S-%f")[:-3]
     now = str(dt_string)
     return now
+
+
+def load_results(result_path):
+    params = pd.read_pickle(os.path.join(result_path, "params.pkl"))
+    results = pd.read_pickle(os.path.join(result_path, "results.pkl"))
+    return params, results
 
 
 if __name__ == "__main__":
