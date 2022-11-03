@@ -7,17 +7,17 @@ from bokeh.palettes import Viridis, Category10, Category20
 from bokeh.io import export_svg
 
 
-def plot_weight_ev(flat_W_t, flat_eq_W_t, sim_iters, eq_iters, title=""):
+def plot_weight_ev(flat_W_t, flat_W_t_set2, iters, iters_set2, title="W", legend=("Simulation", "Equation")):
     weight_plot = figure(x_axis_label="iters", y_axis_label="Weights", title=title)
     for i in range(np.min([flat_W_t.shape[-1], 20])):
         if i == 0:
-            weight_plot.line(sim_iters, flat_W_t[:, i], line_width=6, line_dash=(4, 4), alpha=0.5, color=Category20[20][i],
-                             legend_label="Simulation")
-            weight_plot.line(eq_iters, flat_eq_W_t[:, i], line_width=3, color=Category20[20][i],
-                             legend_label="First order")
+            weight_plot.line(iters, flat_W_t[:, i], line_width=6, line_dash=(4, 4), alpha=0.5, color=Category20[20][i],
+                             legend_label=legend[0])
+            weight_plot.line(iters_set2, flat_W_t_set2[:, i], line_width=3, color=Category20[20][i],
+                             legend_label=legend[1])
         else:
-            weight_plot.line(sim_iters, flat_W_t[:, i], line_width=6, line_dash=(4, 4), alpha=0.5, color=Category20[20][i])
-            weight_plot.line(eq_iters, flat_eq_W_t[:, i], line_width=3, color=Category20[20][i])
+            weight_plot.line(iters, flat_W_t[:, i], line_width=6, line_dash=(4, 4), alpha=0.5, color=Category20[20][i])
+            weight_plot.line(iters_set2, flat_W_t_set2[:, i], line_width=3, color=Category20[20][i])
     weight_plot.legend.location = "bottom_right"
     # weight_plot.output_backend = "svg"
     return weight_plot
