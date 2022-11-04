@@ -9,7 +9,10 @@ class MultiDimGaussian(BaseTask):
         if mu_vec is not None:
             self.mu = mu_vec
             self.input_dim = len(mu_vec) + 1
-            self.covariance = covariance
+            if covariance is None:
+                self.covariance = np.identity(self.input_dim - 1) * max_std
+            else:
+                self.covariance = covariance
         else:
             self.mu = np.linspace(max_mean/10, max_mean, num=gaussian_dim, endpoint=True)
             self.input_dim = len(self.mu) + 1

@@ -9,18 +9,19 @@ from neuromod.utils import save_var, get_date_time
 
 
 def main():
-    run_name = "non_linear_4D_gaussian_long_300"
+    run_name = "non_linear_4D_gaussian_custom_mean"
     results_path = "../results"
 
     n_steps = 6000
     save_weights_every = 20
-    iter_control = 300
+    iter_control = 100
 
     results_dict = {}
 
     # Init dataset
-    dataset_params = {# "mu_vec": (3.0, 1.0),
-                      "batch_size": 1024}
+    dataset_params = {"mu_vec": np.array((3.0, 1.0, 2.5, 0.5)),
+                      "batch_size": 1024,
+                      "max_std": 0.5}
                       # "dependence_parameter": 0.8,
                       # "sigma_vec": (1.0, 1.0)}
 

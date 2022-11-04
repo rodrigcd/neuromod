@@ -1,15 +1,15 @@
 import numpy as np
 from tqdm import tqdm
 import os
-from neuromod.control import NonLinearNetEq, NonLinearNetControl
+from neuromod.control import LinearNetEq, LinearNetControl
 from neuromod.tasks import AffineCorrelatedGaussian
 from neuromod.trainers import two_layer_training
-from neuromod.networks import NonLinearNet
+from neuromod.networks import LinearNet
 from neuromod.utils import save_var, get_date_time
 
 
 def main():
-    run_name = "test_experiment"
+    run_name = "test_linear_net"
     results_path = "../results"
 
     n_steps = 3000
@@ -45,7 +45,7 @@ def main():
     model_params["output_dim"] = dataset.output_dim
 
     # Init neural network
-    model = NonLinearNet(**model_params)
+    model = LinearNet(**model_params)
 
     # Train neural network
     iters, loss, weights_iter, weights = two_layer_training(model=model, dataset=dataset, n_steps=n_steps,
@@ -69,8 +69,8 @@ def main():
     equation_params = {"in_cov": input_corr,
                        "out_cov": output_corr,
                        "in_out_cov": input_output_corr,
-                       "expected_y": expected_y,
-                       "expected_x": expected_x,
+                       # "expected_y": expected_y,
+                       # "expected_x": expected_x,
                        "init_weights": init_weights,
                        "n_steps": n_steps,
                        "reg_coef": model_params["reg_coef"],
@@ -78,11 +78,11 @@ def main():
                        "learning_rate": model_params["learning_rate"],
                        "time_constant": 1.0}
 
-    solver = NonLinearNetEq(**equation_params)
+    solver = LinearNetEq(**equation_params)
 
     # Initialize control
     control_params = {**control_params, **equation_params}
-    control = NonLinearNetControl(**control_params)
+    control = LinearNetControl(**control_params)
 
     W1_t, W2_t = solver.get_weights(time_span, get_numpy=True)
     Loss_t = solver.get_loss_function(W1_t, W2_t, get_numpy=True)
@@ -125,7 +125,7 @@ def main():
     reset_model_params["W1_0"] = W1_0
     reset_model_params["W2_0"] = W2_0
 
-    reset_model = NonLinearNet(**reset_model_params)
+    reset_model = LinearNet(**reset_model_params)
 
     iters, loss_OPT, weights_iter_OPT, weights_OPT = two_layer_training(model=reset_model,
                                                                         dataset=dataset,
