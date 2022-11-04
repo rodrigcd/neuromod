@@ -125,9 +125,6 @@ class LinearNetControl(LinearNetEq):
         g_tilda = cal1 + g
         return g, g_tilda
 
-    def _vectorize_init_weights(self):
-        self.w0 = torch.cat((torch.reshape(self.W1, shape=(-1,)), torch.reshape(self.W2, shape=(-1,))), dim=0)
-
     def weight_der(self, t, W1, W2, t_index=None):
         if t_index is None:
             t_index = (self.time_span == t).nonzero(as_tuple=True)[0][0]

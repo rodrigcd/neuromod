@@ -202,7 +202,6 @@ class NonLinearNetControl(NonLinearNetEq):
 
         L2 = (self.reg_coef / 2.0) * (torch.sum(W1 ** 2, (-1, -2)) + torch.sum(W2 ** 2, (-1, -2)))
 
-        #L = L1_term1 + L1_term2 + L1_term3 + L2 + 0.5*W2.shape[1]*self.intrinsic_noise**2
         L = L1_term1 + L1_term2 + L1_term3 + L2 + 0.5*W2.shape[1]*self.intrinsic_noise**2
 
         if get_numpy:

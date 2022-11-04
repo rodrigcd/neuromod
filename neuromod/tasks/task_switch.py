@@ -1,4 +1,6 @@
 from neuromod.tasks import BaseTask, AffineCorrelatedGaussian
+import numpy as np
+
 
 class TaskSwitch(BaseTask):
 
@@ -20,19 +22,19 @@ class TaskSwitch(BaseTask):
         for i, dataset_class in enumerate(self.dataset_classes):
             self.datasets.append(dataset_class(**self.dataset_params[i]))
 
+        self.input_dim = self.datasets[0].input_dim
+        self.output_dim = self.datasets[0].output_dim
         self.current_dataset_id = 0
 
     def reset(self):
         self.batch_iter = 0
 
     def sample_batch(self):
+        section = np.floor(self.batch_iter/self.change_tasks_every)
+        self.current_dataset_id = int(section % len(self.dataset_classes))
         current_dataset = self.datasets[self.current_dataset_id]
         batch_x, batch_y = current_dataset.sample_batch()
         self.batch_iter += 1
-        if self.batch_iter % self.change_tasks_every == 0:
-            self.current_dataset_id += 1
-            if self.current_dataset_id >= len(self.datasets):
-                self.current_dataset_id = 0
         return batch_x, batch_y
 
     def get_correlation_matrix(self):
