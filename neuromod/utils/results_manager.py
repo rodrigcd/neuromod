@@ -32,7 +32,7 @@ class ResultsManager(object):
         # Plot loss
         self.plot_loss_settings = {"losses_labels": ("Loss_t_sim", "Loss_t_eq", "Loss_t_control_opt", "Loss_t_sim_OPT"),
                                    "colors": (Category10[10][0], Category10[10][0], Category10[10][1], Category10[10][1]),
-                                   "labels": ("Real Non-linear", "Approximation", "Approximated Optimized Control", "Optimized Non-linear"),
+                                   "labels": ("Simulation", "Equation", "Optimized equation with control", "Optimized simulation"),
                                    "alphas": (0.3, 1, 1, 0.3),
                                    "plot_size": (800, 500),
                                    "x_axis_label": "iters",
