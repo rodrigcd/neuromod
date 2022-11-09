@@ -27,9 +27,9 @@ def main(argv):
     run_name = args["run_name"] + args["datasets"]
     results_path = args["save_path"]
 
-    n_steps = 21000
+    n_steps = 210
     save_weights_every = 20
-    iter_control = 300
+    iter_control = 5
 
     results_dict = {}
 
@@ -151,7 +151,7 @@ def main(argv):
     g1_tilda = control.g1_tilda
     g2_tilda = control.g2_tilda
     control_signal = (g1_tilda, g2_tilda)
-    W1_0, W2_0 = control_params["init_weights"]
+    W1_0, W2_0 = equation_params["init_weights"]
     results_dict["control_signal"] = control_signal
 
     reset_model_params = model_params.copy()
