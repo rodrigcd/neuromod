@@ -5,7 +5,7 @@ from bokeh.layouts import gridplot
 from bokeh.io import output_notebook
 output_notebook()
 
-from neuromod.utils import plot_lines, plot_weight_ev, load_results, plot_control, plot_net_reward
+from metamod.utils import plot_lines, plot_weight_ev, load_results, plot_control, plot_net_reward
 
 
 class ResultsManager(object):

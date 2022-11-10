@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from neuromod.control import LinearNetEq, LinearNetControl
+from metamod.control import LinearNetEq, LinearNetControl
 
 
 class TaskSwitchLinearNetEq(LinearNetEq):
@@ -217,10 +217,10 @@ class TaskSwitchLinearNetControl(TaskSwitchLinearNetEq):
 
 if __name__ == "__main__":
     import numpy as np
-    from neuromod.tasks import TaskSwitch, AffineCorrelatedGaussian
-    from neuromod.trainers import two_layer_training
-    from neuromod.networks import LinearNet
-    from neuromod.control import TaskSwitchLinearNetEq
+    from metamod.tasks import TaskSwitch, AffineCorrelatedGaussian
+    from metamod.trainers import two_layer_training
+    from metamod.networks import LinearNet
+    from metamod.control import TaskSwitchLinearNetEq
 
     run_name = "task_switch_test"
     results_path = "../results"

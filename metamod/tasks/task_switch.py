@@ -1,4 +1,4 @@
-from neuromod.tasks import BaseTask, AffineCorrelatedGaussian
+from metamod.tasks import BaseTask, AffineCorrelatedGaussian
 import numpy as np
 
 

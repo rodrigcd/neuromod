@@ -1,11 +1,11 @@
 import numpy as np
 from tqdm import tqdm
 import os
-from neuromod.control import TaskSwitchLinearNetEq, TaskSwitchLinearNetControl
-from neuromod.tasks import TaskSwitch, AffineCorrelatedGaussian, MultiDimGaussian
-from neuromod.trainers import two_layer_training
-from neuromod.networks import LinearNet
-from neuromod.utils import save_var, get_date_time
+from metamod.control import TaskSwitchLinearNetEq, TaskSwitchLinearNetControl
+from metamod.tasks import TaskSwitch, AffineCorrelatedGaussian, MultiDimGaussian
+from metamod.trainers import two_layer_training
+from metamod.networks import LinearNet
+from metamod.utils import save_var, get_date_time
 import argparse
 import sys
 

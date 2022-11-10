@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="neuromod",
+    name="metamod",
     version="0.0.1",
     author="Rodrigo Carrasco",
     author_email="rodrigo.carrasco.davis@gmail.com",

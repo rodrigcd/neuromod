@@ -1,11 +1,11 @@
 import numpy as np
 from tqdm import tqdm
 import os
-from neuromod.control import NonLinearNetEq, NonLinearNetControl
-from neuromod.tasks import AffineCorrelatedGaussian
-from neuromod.trainers import two_layer_training
-from neuromod.networks import NonLinearNet
-from neuromod.utils import save_var, get_date_time
+from metamod.control import NonLinearNetEq, NonLinearNetControl
+from metamod.tasks import AffineCorrelatedGaussian
+from metamod.trainers import two_layer_training
+from metamod.networks import NonLinearNet
+from metamod.utils import save_var, get_date_time
 
 
 def main():

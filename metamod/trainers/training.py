@@ -1,7 +1,7 @@
 import torch
 from tqdm import tqdm
-from neuromod.tasks import BaseTask
-from neuromod.networks import BaseNetwork
+from metamod.tasks import BaseTask
+from metamod.networks import BaseNetwork
 import numpy as np
 
 
