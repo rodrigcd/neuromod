@@ -8,6 +8,7 @@ from metamod.networks import LinearNet
 from metamod.utils import save_var, get_date_time
 import argparse
 import sys
+import copy
 
 
 def main(argv):
@@ -92,8 +93,8 @@ def main(argv):
     results_dict["weights_iters_sim"] = weights_iter
 
     # Solving equation
-    init_W1 = weights[0][0, ...]
-    init_W2 = weights[1][0, ...]
+    init_W1 = copy.deepcopy(weights[0][0, ...])
+    init_W2 = copy.deepcopy(weights[1][0, ...])
 
     init_weights = [init_W1, init_W2]
     input_corr, output_corr, input_output_corr, expected_y, expected_x = dataset.get_correlation_matrix()
@@ -114,7 +115,7 @@ def main(argv):
 
     solver = TaskSwitchLinearNetEq(**equation_params)
 
-    control_params = {**control_params, **equation_params}
+    control_params = {**control_params, **copy.deepcopy(equation_params)}
     control = TaskSwitchLinearNetControl(**control_params)
 
     W1_t, W2_t = solver.get_weights(time_span, get_numpy=True)
