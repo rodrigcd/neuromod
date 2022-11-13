@@ -28,9 +28,9 @@ def main(argv):
     run_name = args["run_name"] + args["datasets"]
     results_path = args["save_path"]
 
-    n_steps = 210
+    n_steps = 21000
     save_weights_every = 20
-    iter_control = 5
+    iter_control = 100
 
     results_dict = {}
 
