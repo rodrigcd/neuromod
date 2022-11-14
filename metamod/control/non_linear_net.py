@@ -100,7 +100,7 @@ class NonLinearNetEq(object):
         L1_term1 = 1/2*torch.trace(self.out_cov)
         L1_term2 = -1.0*(torch.diagonal(self.expected_y.T @ W2 @ f_term, dim1=-2, dim2=-1).sum(-1)
                          + torch.diagonal(W2 @ J @ self.in_out_cov, dim1=-2, dim2=-1).sum(-1)
-                         - torch.diagonal(self.expected_y @ W2 @ J @ self.expected_x).sum(-1))
+                         - torch.diagonal(self.expected_y.T @ W2 @ J @ self.expected_x).sum(-1))
         L1_term3 = 0.5*(torch.diagonal(torch.transpose(f_term, dim0=-1, dim1=-2) @ torch.transpose(W2, dim0=-1, dim1=-2) @ W2 @ f_term).sum(-1)
                         + torch.diagonal(torch.transpose(J, dim0=-1, dim1=-2) @ torch.transpose(W2, dim0=-1, dim1=-2) @ W2 @ J @ self.in_cov, dim1=-2, dim2=-1).sum(-1)
                         - torch.diagonal(torch.transpose(J, dim0=-1, dim1=-2) @ torch.transpose(W2, dim0=-1, dim1=-2) @ W2 @ J @ self.expected_x @ self.expected_x.T, dim1=-2, dim2=-1).sum(-1))

@@ -10,11 +10,11 @@ from metamod.utils import save_var, get_date_time
 
 def main():
     run_name = "non_linear_correlated_gaussian_long_300"
-    results_path = "../results"
+    results_path = "../results/non_linear_results/"
 
     n_steps = 6000
     save_weights_every = 20
-    iter_control = 300
+    iter_control = 100
 
     results_dict = {}
 

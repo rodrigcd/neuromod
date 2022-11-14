@@ -10,11 +10,11 @@ from metamod.utils import save_var, get_date_time
 
 def main():
     run_name = "non_linear_4D_gaussian_custom_mean"
-    results_path = "../results"
+    results_path = "../results/non_linear_results/"
 
-    n_steps = 6000
+    n_steps = 60
     save_weights_every = 20
-    iter_control = 100
+    iter_control = 5
 
     results_dict = {}
 
