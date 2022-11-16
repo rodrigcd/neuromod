@@ -65,7 +65,7 @@ def main(argv):
                           "change_tasks_every": args["change_task_every"]}
 
     model_params = {"learning_rate": 5e-3,
-                    "hidden_dim": 6,
+                    "hidden_dim": 8,
                     "intrinsic_noise": 0.00,
                     "reg_coef": 0.01,
                     "W1_0": None,
