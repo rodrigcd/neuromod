@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#SBATCH --job-name=task_switch
+#SBATCH --job-name=non_linear
 #SBATCH -w gpu-380-17
 #SBATCH --output=log_non_linear.out
 #SBATCH --error=log_non_linear.err
@@ -22,5 +22,5 @@ experiment_path="long_run_non_linear"
 save_path="../results/$experiment_path/"
 echo $save_path
 
-python non_linear_two_layer.py --run-name non_linear --datasets AffineCorrelatedGaussian --save-path $save_path --change-task-every 1600 --iter-control 500
-python non_linear_two_layer.py --run-name non_linear --datasets MultiDimGaussian --save-path $save_path --change-task-every 1600 --iter-control 500
+python non_linear_two_layer.py --run-name non_linear --datasets AffineCorrelatedGaussian --save-path $save_path --iter-control 500
+python non_linear_two_layer.py --run-name non_linear --datasets MultiDimGaussian --save-path $save_path --iter-control 500
