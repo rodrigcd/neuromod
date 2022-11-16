@@ -23,13 +23,13 @@ def main(argv):
     parser.add_argument(
         '--change-task-every', type=int, default=1600)
     parser.add_argument(
-        '--n-steps', type=int, default=2300)
+        '--n-steps', type=int, default=23000)
     parser.add_argument(
         '--iter-control', type=int, default=500)
     args = parser.parse_args(argv)
     args = vars(args)
 
-    run_name = args["run_name"] + args["datasets"]
+    run_name = args["run_name"] + "_" + args["datasets"]
     results_path = args["save_path"]
 
     n_steps = args["n_steps"]
@@ -78,6 +78,14 @@ def main(argv):
                       "reward_convertion": 1.0,
                       "init_g": None,
                       "control_lr": 1.0}
+
+    print("##### dataset_params #####")
+    print(dataset_params)
+    print("##### model_params #####")
+    print(model_params)
+    print("##### control_params #####")
+    print(control_params)
+
 
     dataset = TaskSwitch(dataset_classes=dataset_params["dataset_classes"],
                          dataset_list_params=(dataset1_params, dataset2_params),
@@ -193,7 +201,7 @@ def main(argv):
                    "reset_model_params": reset_model_params}
 
     time_str = get_date_time()
-    saving_path = os.path.join(results_path, "_" + run_name + "_" + time_str)
+    saving_path = os.path.join(results_path, run_name + "_" + time_str)
     save_var(results_dict, "results.pkl", results_path=saving_path)
     save_var(params_dict, "params.pkl", results_path=saving_path)
 

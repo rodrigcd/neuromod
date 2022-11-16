@@ -1,4 +1,4 @@
-Mon Nov 14 19:41:29 2022       
+Wed Nov 16 11:57:42 2022       
 +-----------------------------------------------------------------------------+
 | NVIDIA-SMI 510.85.02    Driver Version: 510.85.02    CUDA Version: 11.6     |
 |-------------------------------+----------------------+----------------------+
@@ -6,8 +6,8 @@ Mon Nov 14 19:41:29 2022
 | Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
 |                               |                      |               MIG M. |
 |===============================+======================+======================|
-|   0  Quadro RTX 5000     Off  | 00000000:86:00.0 Off |                  Off |
-| 32%   28C    P0    48W / 230W |      0MiB / 16384MiB |      5%      Default |
+|   0  Quadro RTX 5000     Off  | 00000000:37:00.0 Off |                  Off |
+| 31%   27C    P0    38W / 230W |      0MiB / 16384MiB |      5%      Default |
 |                               |                      |                  N/A |
 +-------------------------------+----------------------+----------------------+
                                                                                
@@ -19,6 +19,11 @@ Mon Nov 14 19:41:29 2022
 |  No running processes found                                                 |
 +-----------------------------------------------------------------------------+
 True
+../results/long_run_task_switch/
 Using correlated gaussians
-Using 4D gaussians
-Using correlated gaussians
+##### dataset_params #####
+{'dataset1_params': {'mu_vec': (3.0, 1.0), 'sigma_vec': (1.0, 1.0), 'dependence_parameter': 0.8, 'batch_size': 2048}, 'dataset2_params': {'mu_vec': (-2.0, 2.0), 'sigma_vec': (1.0, 1.0), 'dependence_parameter': 0.2, 'batch_size': 2048}, 'dataset_classes': (<class 'metamod.tasks.affine_gaussian.AffineCorrelatedGaussian'>, <class 'metamod.tasks.affine_gaussian.AffineCorrelatedGaussian'>), 'change_tasks_every': 1600}
+##### model_params #####
+{'learning_rate': 0.005, 'hidden_dim': 6, 'intrinsic_noise': 0.0, 'reg_coef': 0.01, 'W1_0': None, 'W2_0': None}
+##### control_params #####
+{'control_lower_bound': -0.5, 'control_upper_bound': 0.5, 'gamma': 0.99, 'cost_coef': 0.3, 'reward_convertion': 1.0, 'init_g': None, 'control_lr': 1.0}
