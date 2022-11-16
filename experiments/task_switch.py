@@ -86,7 +86,6 @@ def main(argv):
     print("##### control_params #####")
     print(control_params)
 
-
     dataset = TaskSwitch(dataset_classes=dataset_params["dataset_classes"],
                          dataset_list_params=(dataset1_params, dataset2_params),
                          change_tasks_every=dataset_params["change_tasks_every"])

@@ -2,32 +2,61 @@ import numpy as np
 from tqdm import tqdm
 import os
 from metamod.control import NonLinearNetEq, NonLinearNetControl
-from metamod.tasks import AffineCorrelatedGaussian
+from metamod.tasks import AffineCorrelatedGaussian, MultiDimGaussian
 from metamod.trainers import two_layer_training
 from metamod.networks import NonLinearNet
 from metamod.utils import save_var, get_date_time
+import argparse
+import sys
+import copy
 
 
-def main():
-    run_name = "non_linear_correlated_gaussian_long_300"
-    results_path = "../results/non_linear_results/"
+def main(argv):
+    # Parse arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--run-name', type=str, default="non_linear")
+    parser.add_argument(
+        '--save-path', type=str, default="../results/non_linear/")
+    parser.add_argument(
+        '--datasets', type=str, default="AffineCorrelatedGaussian")
+    parser.add_argument(
+        '--n-steps', type=int, default=12000)
+    parser.add_argument(
+        '--iter-control', type=int, default=500)
+    args = parser.parse_args(argv)
+    args = vars(args)
 
-    n_steps = 6000
+    run_name = args["run_name"] + "_" + args["datasets"]
+    results_path = args["save_path"]
+
+    n_steps = args["n_steps"]
     save_weights_every = 20
-    iter_control = 100
+    iter_control = args["iter_control"]
 
     results_dict = {}
 
     # Init dataset
-    dataset_params = {"mu_vec": (3.0, 1.0),
-                      "batch_size": 1024,
-                      "dependence_parameter": 0.8,
-                      "sigma_vec": (1.0, 1.0)}
+    batch_size = 2048
+
+    if args["datasets"] == "AffineCorrelatedGaussian":
+        print("Using correlated gaussians")
+        dataset_params = {"mu_vec": (3.0, 1.0), "sigma_vec": (1.0, 1.0), "dependence_parameter": 0.8,
+                          "batch_size": batch_size}
+        # Init dataset
+        dataset = AffineCorrelatedGaussian(**dataset_params)
+    else:
+        print("Using 4D gaussians")
+        dataset_params = {"mu_vec": np.array((1.0, 3.0, 0.5, 0.5)),
+                           "batch_size": batch_size,
+                           "max_std": 0.5}
+        # Init dataset
+        dataset = MultiDimGaussian(**dataset_params)
 
     model_params = {"learning_rate": 1e-3,
-                    "hidden_dim": 4,
-                    "intrinsic_noise": 0.05,
-                    "reg_coef": 0.0,
+                    "hidden_dim": 8,
+                    "intrinsic_noise": 0.00,
+                    "reg_coef": 0.01,
                     "W1_0": None,
                     "W2_0": None}
 
@@ -37,10 +66,15 @@ def main():
                       "cost_coef": 0.3,
                       "reward_convertion": 1.0,
                       "init_g": None,
-                      "control_lr": 10.0}
+                      "control_lr": 5.0}
 
-    # Init dataset
-    dataset = AffineCorrelatedGaussian(**dataset_params)
+    print("##### dataset_params #####")
+    print(dataset_params)
+    print("##### model_params #####")
+    print(model_params)
+    print("##### control_params #####")
+    print(control_params)
+
     model_params["input_dim"] = dataset.input_dim
     model_params["output_dim"] = dataset.output_dim
 
@@ -57,8 +91,8 @@ def main():
     results_dict["weights_iters_sim"] = weights_iter
 
     # Solving equation
-    init_W1 = weights[0][0, ...]
-    init_W2 = weights[1][0, ...]
+    init_W1 = copy.deepcopy(weights[0][0, ...])
+    init_W2 = copy.deepcopy(weights[1][0, ...])
 
     init_weights = [init_W1, init_W2]
     input_corr, output_corr, input_output_corr, expected_y, expected_x = dataset.get_correlation_matrix()
@@ -81,7 +115,7 @@ def main():
     solver = NonLinearNetEq(**equation_params)
 
     # Initialize control
-    control_params = {**control_params, **equation_params}
+    control_params = {**control_params, **copy.deepcopy(equation_params)}
     control = NonLinearNetControl(**control_params)
 
     W1_t, W2_t = solver.get_weights(time_span, get_numpy=True)
@@ -157,4 +191,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
