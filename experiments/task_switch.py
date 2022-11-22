@@ -172,6 +172,8 @@ def main(argv):
 
     reset_model = LinearNet(**reset_model_params)
 
+    dataset.reset()
+
     iters, loss_OPT, weights_iter_OPT, weights_OPT = two_layer_training(model=reset_model,
                                                                         dataset=dataset,
                                                                         n_steps=n_steps,
