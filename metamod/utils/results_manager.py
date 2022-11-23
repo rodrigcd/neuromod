@@ -29,7 +29,13 @@ class ResultsManager(object):
             print(self.results.keys())
 
     def _plot_settings(self):
-        # Plot loss
+
+        self.plot_settings = {"axis_label_text_font_size": "15pt",
+                              "numbers_label_text_font_size": "12pt",
+                              "legend_label_text_font_size": "13pt",
+                              "title_text_font_size": "25pt",
+                              "use_svg": False}
+
         self.plot_loss_settings = {"losses_labels": ("Loss_t_sim", "Loss_t_eq", "Loss_t_control_opt", "Loss_t_sim_OPT"),
                                    "colors": (Category10[10][0], Category10[10][0], Category10[10][1], Category10[10][1]),
                                    "labels": ("Simulation", "Equation", "Optimized equation with control", "Optimized simulation"),
@@ -62,6 +68,14 @@ class ResultsManager(object):
         aux_dict = plot_settings.copy()
         aux_dict.pop("losses_labels")
         s = plot_lines(iters, losses, **aux_dict)
+        s.xaxis.axis_label_text_font_size = self.plot_settings["axis_label_text_font_size"]
+        s.yaxis.axis_label_text_font_size = self.plot_settings["axis_label_text_font_size"]
+        s.yaxis.major_label_text_font_size = self.plot_settings["numbers_label_text_font_size"]
+        s.xaxis.major_label_text_font_size = self.plot_settings["numbers_label_text_font_size"]
+        s.legend.label_text_font_size = self.plot_settings["legend_label_text_font_size"]
+        s.title.text_font_size = self.plot_settings["title_text_font_size"]
+        if self.plot_settings["use_svg"]:
+            s.output_backend = "svg"
         show(s)
         # return iters, losses, plot_settings
 
