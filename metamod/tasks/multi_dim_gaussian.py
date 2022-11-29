@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from .base_task import BaseTask
+from metamod.tasks import BaseTask
 
 
 class MultiDimGaussian(BaseTask):
