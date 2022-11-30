@@ -9,10 +9,12 @@ import os
 
 class MNIST(BaseTask):
 
-    def __init__(self, batch_size=32, subset=(1, 7, 3), new_shape=None, affine_data=True):
+    def __init__(self, batch_size=32, subset=(1, 7, 3), new_shape=None, affine_data=True,
+                 training_mode=True):
         self.batch_size = batch_size
         self.new_shape = new_shape
         self.affine_data = affine_data
+        self.training_mode = training_mode
         mnist_data_path = os.path.join(metamod.__path__[0], "tasks/data_mnist")
 
         self.training_data = datasets.MNIST(
@@ -91,7 +93,9 @@ class MNIST(BaseTask):
         self.input_dim = self.train_input_data.shape[1]
         self.output_dim = self.test_label_data.shape[1]
 
-    def sample_batch(self, training=True):
+    def sample_batch(self, training=None):
+        if training is None:
+            training = self.training_mode
         if training:
             batch_idx = np.random.choice(np.arange(len(self.train_label_data)), size=self.batch_size, replace=True)
             img = self.train_input_data[batch_idx, :]
@@ -102,7 +106,9 @@ class MNIST(BaseTask):
             label = self.test_label_data[batch_idx]
         return img, label
 
-    def get_correlation_matrix(self, training=True):
+    def get_correlation_matrix(self, training=None):
+        if training is None:
+            training = self.training_mode
         if training:
             input_data = self.train_input_data
             label_data = self.train_label_data
