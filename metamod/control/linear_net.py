@@ -198,7 +198,9 @@ class LinearNetControl(LinearNetEq):
         cumulated_R.backward()
 
         # for iters in range(inner_loop):
+        self.update_layer = 0
         self.g1, self.g1_tilda = self._update_g(self.g1, lr=lr)
+        self.update_layer = 1
         self.g2, self.g2_tilda = self._update_g(self.g2, lr=lr)
 
         if get_numpy:
