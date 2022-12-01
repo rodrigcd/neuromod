@@ -104,7 +104,10 @@ class LinearNetControl(LinearNetEq):
         time_span = np.arange(0, n_steps) * learning_rate
         self.dt = time_span[1]-time_span[0]
         self.time_span = torch.from_numpy(time_span).requires_grad_(False).type(self.dtype).to(self.device)
+
+        self.update_layer = 0  # Kind of a hack for other code :(
         self.g1, self.g1_tilda = self._get_g(init_g, shape=(n_steps, self.W1.shape[0], self.W1.shape[1]))
+        self.update_layer = 1
         self.g2, self.g2_tilda = self._get_g(init_g, shape=(n_steps, self.W2.shape[0], self.W2.shape[1]))
 
     def _get_g(self, init_g, shape):
