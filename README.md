@@ -5,6 +5,9 @@
 - Task engagement agent (Done)
 - Task engagement control
 - Low rank control optimization (Done)
-- Estimate differential equations for ReLU networks
+  - Canonical base (Done)
+  - Frequency base
+- Estimate differential equations for ReLU networks (This is not possible (?))
 - Brute Force control optimization in real networks
+  - Short term planning using approximation
 - Find optimal Q for task switch
