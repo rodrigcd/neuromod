@@ -44,22 +44,51 @@ alphas = (1, )
 # s = plot_lines(iters, losses, legends, alphas, colors)
 # show(s)
 
-composition_dataset_params = {"dataset_classes": (SemanticTask,),
-                              "dataset_list_params": (dataset_params,)}
+# composition_dataset_params = {"dataset_classes": (SemanticTask,),
+#                               "dataset_list_params": (dataset_params,)}
+#
+# composition_dataset = CompositionOfTasks(**composition_dataset_params)
+#
+# comp_model_params = {"learning_rate": 5e-3,
+#                      "hidden_dim": 10,
+#                      "intrinsic_noise": 0.0,
+#                      "reg_coef": 0.0,
+#                      "input_dim": composition_dataset.input_dim,
+#                      "output_dim": composition_dataset.output_dim,
+#                      "W1_0": weights[0][0, ...],
+#                      "W2_0": weights[1][0, ...],
+#                      "task_output_index": composition_dataset.task_output_index}
+#
+# engage_coefficients = np.ones((n_steps, 1))  # (t, phis)
+#
+# comp_model = LinearTaskEngNet(**comp_model_params)
+#
+# iters, comp_loss, weights_iter, weights = two_layer_engage_training(model=comp_model,
+#                                                                     dataset=composition_dataset,
+#                                                                     n_steps=n_steps,
+#                                                                     save_weights_every=save_weights_every,
+#                                                                     engagement_coefficients=engage_coefficients)
+
+dataset_params1 = dataset_params.copy()
+dataset_params2 = {"batch_size": 32,
+                  "h_levels": 4}
+
+composition_dataset_params = {"dataset_classes": (SemanticTask, SemanticTask),
+                              "dataset_list_params": (dataset_params1, dataset_params2)}
 
 composition_dataset = CompositionOfTasks(**composition_dataset_params)
 
 comp_model_params = {"learning_rate": 5e-3,
-                     "hidden_dim": 10,
-                     "intrinsic_noise": 0.0,
-                     "reg_coef": 0.0,
-                     "input_dim": composition_dataset.input_dim,
-                     "output_dim": composition_dataset.output_dim,
-                     "W1_0": weights[0][0, ...],
-                     "W2_0": weights[1][0, ...],
-                     "task_output_index": composition_dataset.task_output_index}
+                "hidden_dim": 10,
+                "intrinsic_noise": 0.0,
+                "reg_coef": 0.0,
+                "input_dim": composition_dataset.input_dim,
+                "output_dim": composition_dataset.output_dim,
+                "W1_0": None,
+                "W2_0": None,
+                "task_output_index": composition_dataset.task_output_index}
 
-engage_coefficients = np.ones((n_steps, 1))  # (t, phis)
+engage_coefficients = np.ones((n_steps, len(composition_dataset.datasets)))  # (t, phis)
 
 comp_model = LinearTaskEngNet(**comp_model_params)
 

@@ -37,8 +37,8 @@ class CompositionOfTasks(BaseTask):
             x, y = dataset.sample_batch()
             batch_x.append(x)
             batch_y.append(y)
-        batch_x = np.concatenate(batch_x)
-        batch_y = np.concatenate(batch_y)
+        batch_x = np.concatenate(batch_x, axis=1)
+        batch_y = np.concatenate(batch_y, axis=1)
         return batch_x, batch_y
 
     def get_correlation_matrix(self):
