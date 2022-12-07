@@ -3,7 +3,7 @@
 ## TODO: List
 - Composition of tasks (Done)
 - Task engagement agent (Done)
-- Task engagement control
+- Task engagement control (Done)
 - Low rank control optimization (Done)
   - Canonical base (Done)
   - Frequency base

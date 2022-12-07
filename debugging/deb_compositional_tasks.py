@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from metamod.tasks import TaskSwitch, AffineCorrelatedGaussian, CompositionOfTasks, SemanticTask
 from metamod.trainers import two_layer_training, two_layer_engage_training
 from metamod.networks import LinearNet, LinearTaskEngNet
-from metamod.control import LinearNetTaskEngEq
+from metamod.control import LinearNetTaskEngEq, LinearNetTaskEngControl
 
 run_name = "composition_of_tasks"
 results_path = "../results"
@@ -29,6 +29,7 @@ model = LinearNet(**model_params)
 
 n_steps = 135
 save_weights_every = 20
+iter_control = 5
 
 iters, baseline_loss, weights_iter, weights = two_layer_training(model=model, dataset=dataset, n_steps=n_steps, save_weights_every=save_weights_every)
 
@@ -89,7 +90,7 @@ comp_model_params = {"learning_rate": 5e-3,
                      "W2_0": None,
                      "task_output_index": composition_dataset.task_output_index}
 
-engage_coefficients = np.ones((n_steps, len(composition_dataset.datasets)))  # (t, phis)
+engage_coefficients = np.ones((n_steps, len(composition_dataset.datasets)))*0.5  # (t, phis)
 
 comp_model = LinearTaskEngNet(**comp_model_params)
 
@@ -130,6 +131,55 @@ equation_params = {"in_cov": input_corr,
 
 
 solver = LinearNetTaskEngEq(**equation_params)
+
+# f, ax = plt.subplots(1, 3, figsize=(12, 5))
+# ax[0].imshow(solver.overall_in_cov)
+# ax[1].imshow(solver.overall_in_out_cov)
+# ax[2].imshow(solver.in_out_cov_pertask[0].detach().cpu().numpy())
+# plt.show()
+
+control_params = {"control_lower_bound": -1.0,
+                  "control_upper_bound": 1.0,
+                  "gamma": 0.99,
+                  "cost_coef": 0.3,
+                  "reward_convertion": 1.0,
+                  "init_g": None,
+                  "control_lr": 1.0}
+
+control_params = {**control_params, **equation_params}
+control = LinearNetTaskEngControl(**control_params)
+
+W1_t, W2_t = solver.get_weights(time_span, get_numpy=True)
+Loss_t = solver.get_loss_function(W1_t, W2_t, get_numpy=True)
+
+results_dict["W1_t_eq"] = W1_t
+results_dict["W2_t_eq"] = W2_t
+results_dict["Loss_t_eq"] = Loss_t
+
+W1_t_control, W2_t_control = control.get_weights(time_span, get_numpy=True)
+Loss_t_control = control.get_loss_function(W1_t_control, W2_t_control, get_numpy=True)
+
+results_dict["W1_t_control_init"] = W1_t_control
+results_dict["W2_t_control_init"] = W2_t_control
+results_dict["Loss_t_control_init"] = Loss_t_control
+results_dict["engagement_coef"] = control.engagement_coef
+
+control_params["iters_control"] = iter_control
+cumulated_reward = []
+
+for i in range(iter_control):
+    R = control.train_step(get_numpy=True)
+    print(R)
+    cumulated_reward.append(R)
+cumulated_reward = np.array(cumulated_reward).astype(float)
+results_dict["cumulated_reward_opt"] = cumulated_reward
+
+W1_t_opt, W2_t_opt = control.get_weights(time_span, get_numpy=True)
+Loss_t_opt = control.get_loss_function(W1_t_opt, W2_t_opt, get_numpy=True)
+
+results_dict["W1_t_control_opt"] = W1_t_opt
+results_dict["W2_t_control_opt"] = W2_t_opt
+results_dict["Loss_t_control_opt"] = Loss_t_opt
 
 print("debug")
 
