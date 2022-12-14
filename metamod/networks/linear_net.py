@@ -7,11 +7,12 @@ class SingleLayerNet(object):
     def __init__(self, input_dim, output_dim, learning_rate=1e-5, W0=None, reg_coef=0.1, intrinsic_noise=1.0,
                  init_zero=False):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.dtype = torch.float32
+
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.learning_rate = learning_rate
         self.reg_coef = reg_coef
-        self.dtype = torch.float32
         self.intrinsic_noise = intrinsic_noise
         if W0 is None:
             if init_zero:
@@ -47,7 +48,7 @@ class SingleLayerNet(object):
 class LinearNet(BaseNetwork):
 
     def __init__(self, input_dim, output_dim, hidden_dim, learning_rate=1e-5, reg_coef=0.1, W1_0=None, W2_0=None,
-                 intrinsic_noise=1.0):
+                 intrinsic_noise=1.0, keep_grads=False):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -56,6 +57,7 @@ class LinearNet(BaseNetwork):
         self.reg_coef = reg_coef
         self.dtype = torch.float32
         self.intrinsic_noise = intrinsic_noise
+        self.keep_grads = True
         if W1_0 is None:
             self.W1_0 = torch.normal(mean=0.0, std=0.01, size=(self.hidden_dim, self.input_dim), requires_grad=False,
                                      device=self.device)
@@ -68,6 +70,19 @@ class LinearNet(BaseNetwork):
             self.W2_0 = torch.from_numpy(W2_0).requires_grad_(False).type(self.dtype).to(self.device)
         self.W1 = self.W1_0.clone().detach().requires_grad_(True)
         self.W2 = self.W2_0.clone().detach().requires_grad_(True)
+        if self.keep_grads:
+            self.W1.retain_grad()
+            self.W2.retain_grad()
+
+    def reset_weights(self, W1_0=None, W2_0=None):
+        if W1_0 is None:
+            self.W1_0 = torch.from_numpy(W1_0).requires_grad_(False).type(self.dtype).to(self.device)
+            self.W2_0 = torch.from_numpy(W2_0).requires_grad_(False).type(self.dtype).to(self.device)
+        self.W1 = self.W1_0.clone().detach().requires_grad_(True)
+        self.W2 = self.W2_0.clone().detach().requires_grad_(True)
+        if self.keep_grads:
+            self.W1.retain_grad()
+            self.W2.retain_grad()
 
     def forward(self, x):
         x_tensor = torch.from_numpy(x.T).type(self.dtype).to(self.device)
@@ -93,8 +108,12 @@ class LinearNet(BaseNetwork):
         return loss
 
     def update_rule(self):
-        with torch.no_grad():
-            self.W1 -= self.learning_rate*self.W1.grad
-            self.W2 -= self.learning_rate*self.W2.grad
-            self.W1.grad = None
-            self.W2.grad = None
+        if self.keep_grads:
+            self.W1 = self.W1 - self.learning_rate * self.W1.grad
+            self.W2 = self.W2 - self.learning_rate * self.W2.grad
+        else:
+            with torch.no_grad():
+                self.W1 -= self.learning_rate*self.W1.grad
+                self.W2 -= self.learning_rate*self.W2.grad
+                self.W1.grad = None
+                self.W2.grad = None
