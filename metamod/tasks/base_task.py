@@ -15,3 +15,6 @@ class BaseTask(object):
         input_output_corr = correlation_matrices[2]
         linear_mapping = input_output_corr.T @ np.linalg.inv(input_corr)
         return linear_mapping
+
+    def set_random_seed(self, seed):
+        np.random.seed(seed=seed)
