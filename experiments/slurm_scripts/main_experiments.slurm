@@ -1,11 +1,11 @@
 #!/bin/bash
 #
 #SBATCH --job-name=main_exp
-#SBATCH --output=logs/out_main_exp.log
-#SBATCH --error=logs/err_main_exp.log
+#SBATCH --output=logs/out_main_exp_switch.log
+#SBATCH --error=logs/out_main_exp_switch.log
 #SBATCH -p gpu
 #SBATCH -N 1
-#SBATCH --mem=4G
+#SBATCH --mem=6G
 #SBATCH --time=0-24:00
 #SBATCH --gres=gpu:1  # this is important to use GPUs
 #SBATCH --array=0-4
@@ -17,4 +17,7 @@ eval "$(conda shell.bash hook)"
 conda activate metamod
 
 # Linear network experiment
-bash single_task.sh $SLURM_ARRAY_TASK_ID
+# bash single_task.sh $SLURM_ARRAY_TASK_ID
+
+# Task switch
+bash task_switch.sh $SLURM_ARRAY_TASK_ID

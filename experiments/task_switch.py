@@ -2,7 +2,7 @@ import numpy as np
 from tqdm import tqdm
 import os
 from metamod.control import TaskSwitchLinearNetEq, TaskSwitchLinearNetControl
-from metamod.tasks import TaskSwitch, AffineCorrelatedGaussian, MultiDimGaussian
+from metamod.tasks import TaskSwitch, AffineCorrelatedGaussian, MultiDimGaussian, MNIST
 from metamod.trainers import two_layer_training
 from metamod.networks import LinearNet
 from metamod.utils import save_var, get_date_time
@@ -39,7 +39,7 @@ def main(argv):
     results_dict = {}
 
     # Init dataset
-    batch_size = 2048
+    batch_size = 256
 
     if args["datasets"] == "AffineCorrelatedGaussian":
         print("Using correlated gaussians")
@@ -51,7 +51,13 @@ def main(argv):
                           "dataset2_params": dataset2_params,
                           "dataset_classes": (AffineCorrelatedGaussian, AffineCorrelatedGaussian),
                           "change_tasks_every": args["change_task_every"]}
-    else:
+        model_params = {"learning_rate": 5e-3,
+                        "hidden_dim": 6,
+                        "intrinsic_noise": 0.0,
+                        "reg_coef": 0.0,
+                        "W1_0": None,
+                        "W2_0": None}
+    elif args["datasets"] == "MultiDimGaussian":
         print("Using 4D gaussians")
         dataset1_params = {"mu_vec": np.array((1.0, 3.0, 0.5, 0.5)),
                            "batch_size": batch_size,
@@ -63,13 +69,48 @@ def main(argv):
                           "dataset2_params": dataset2_params,
                           "dataset_classes": (MultiDimGaussian, MultiDimGaussian),
                           "change_tasks_every": args["change_task_every"]}
-
-    model_params = {"learning_rate": 5e-3,
-                    "hidden_dim": 8,
-                    "intrinsic_noise": 0.00,
-                    "reg_coef": 0.01,
-                    "W1_0": None,
-                    "W2_0": None}
+        model_params = {"learning_rate": 5e-3,
+                        "hidden_dim": 8,
+                        "intrinsic_noise": 0.0,
+                        "reg_coef": 0.0,
+                        "W1_0": None,
+                        "W2_0": None}
+    elif args["datasets"] == "MNIST_shared":
+        print("Using MNIST_shared")
+        dataset1_params = {"batch_size": batch_size,
+                          "new_shape": (5, 5),
+                          "subset": (1, 3)}
+        dataset2_params = {"batch_size": batch_size,
+                           "new_shape": (5, 5),
+                           "subset": (8, 3)}
+        dataset_params = {"dataset1_params": dataset1_params,
+                          "dataset2_params": dataset2_params,
+                          "dataset_classes": (MNIST, MNIST),
+                          "change_tasks_every": args["change_task_every"]}
+        model_params = {"learning_rate": 5e-3,
+                        "hidden_dim": 50,
+                        "intrinsic_noise": 0.0,
+                        "reg_coef": 0.0,
+                        "W1_0": None,
+                        "W2_0": None}
+    elif args["datasets"] == "MNIST_diff":
+        print("Using MNIST_diff")
+        dataset1_params = {"batch_size": batch_size,
+                          "new_shape": (5, 5),
+                          "subset": (1, 3)}
+        dataset2_params = {"batch_size": batch_size,
+                           "new_shape": (5, 5),
+                           "subset": (9, 5)}
+        dataset_params = {"dataset1_params": dataset1_params,
+                          "dataset2_params": dataset2_params,
+                          "dataset_classes": (MNIST, MNIST),
+                          "change_tasks_every": args["change_task_every"]}
+        model_params = {"learning_rate": 5e-3,
+                        "hidden_dim": 50,
+                        "intrinsic_noise": 0.0,
+                        "reg_coef": 0.0,
+                        "W1_0": None,
+                        "W2_0": None}
 
     control_params = {"control_lower_bound": -0.5,
                       "control_upper_bound": 0.5,
@@ -200,6 +241,7 @@ def main(argv):
 
     time_str = get_date_time()
     saving_path = os.path.join(results_path, run_name + "_" + time_str)
+    print("### Saving to", saving_path, "###")
     save_var(results_dict, "results.pkl", results_path=saving_path)
     save_var(params_dict, "params.pkl", results_path=saving_path)
 

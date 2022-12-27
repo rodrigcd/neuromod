@@ -44,7 +44,7 @@ def main(argv):
                           "dependence_parameter": 0.8,
                           "sigma_vec": (1.0, 1.0)}
         dataset_class = AffineCorrelatedGaussian
-        model_params = {"learning_rate": 1e-3,
+        model_params = {"learning_rate": 5e-3,
                         "hidden_dim": 6,
                         "intrinsic_noise": 0.0,
                         "reg_coef": 0.0,
@@ -56,7 +56,7 @@ def main(argv):
         dataset_params = {"batch_size": 32,
                           "h_levels": 4}
         dataset_class = SemanticTask
-        model_params = {"learning_rate": 1e-3,
+        model_params = {"learning_rate": 5e-3,
                         "hidden_dim": 30,
                         "intrinsic_noise": 0.0,
                         "reg_coef": 0.0,
@@ -69,7 +69,7 @@ def main(argv):
                           "new_shape": (5, 5),
                           "subset": (1, 3)}
         dataset_class = MNIST
-        model_params = {"learning_rate": 1e-3,
+        model_params = {"learning_rate": 5e-3,
                         "hidden_dim": 50,
                         "intrinsic_noise": 0.0,
                         "reg_coef": 0.0,
