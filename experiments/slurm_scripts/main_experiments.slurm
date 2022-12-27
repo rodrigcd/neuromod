@@ -1,13 +1,14 @@
 #!/bin/bash
 #
-#SBATCH --job-name=task_switch
-#SBATCH --output=log_task_switch.out
-#SBATCH --error=log_task_switch.err
+#SBATCH --job-name=main_exp
+#SBATCH --output=out_main_exp.log
+#SBATCH --error=err_main_exp.log
 #SBATCH -p gpu
 #SBATCH -N 1
 #SBATCH --mem=4G
 #SBATCH --time=0-24:00
 #SBATCH --gres=gpu:1  # this is important to use GPUs
+#SBATCH --array=0-4
 
 source /usr/share/modules/init/bash
 module load cuda/11.6
@@ -16,4 +17,4 @@ eval "$(conda shell.bash hook)"
 conda activate metamod
 
 # Linear network experiment
-bash single_task.sh
+bash single_task.sh $SLURM_ARRAY_TASK_ID
