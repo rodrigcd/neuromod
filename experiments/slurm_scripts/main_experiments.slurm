@@ -1,8 +1,8 @@
 #!/bin/bash
 #
 #SBATCH --job-name=main_exp
-#SBATCH --output=out_main_exp.log
-#SBATCH --error=err_main_exp.log
+#SBATCH --output=logs/out_main_exp.log
+#SBATCH --error=logs/err_main_exp.log
 #SBATCH -p gpu
 #SBATCH -N 1
 #SBATCH --mem=4G
