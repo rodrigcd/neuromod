@@ -18,6 +18,7 @@ conda activate metamod
 nvidia-smi
 python -c "import torch;print(torch.cuda.is_available())"
 
+cd ..
 experiment_path="long_run_task_switch"
 save_path="../results/$experiment_path/"
 echo $save_path

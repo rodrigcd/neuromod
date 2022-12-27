@@ -1,35 +1,84 @@
+import copy
+
 import numpy as np
 from tqdm import tqdm
 import os
 from metamod.control import LinearNetEq, LinearNetControl
-from metamod.tasks import AffineCorrelatedGaussian
+from metamod.tasks import AffineCorrelatedGaussian, SemanticTask, MNIST
 from metamod.trainers import two_layer_training
 from metamod.networks import LinearNet
 from metamod.utils import save_var, get_date_time
+import argparse
+import sys
 
 
-def main():
-    run_name = "test_linear_net"
-    results_path = "../results"
+def main(argv):
 
-    n_steps = 3000
+    # Parse arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--run-name', type=str, default="test_run")
+    parser.add_argument(
+        '--save-path', type=str, default="../results/two_layer_linear/")
+    parser.add_argument(
+        '--dataset', type=str, default="AffineCorrelatedGaussian")
+    parser.add_argument(
+        '--n-steps', type=int, default=10000)
+    parser.add_argument(
+        '--iter-control', type=int, default=500)
+    args = parser.parse_args(argv)
+    args = vars(args)
+
+    run_name = args["run_name"] + "_" + args["dataset"]
+    results_path = args["save_path"]
+    n_steps = args["n_steps"]
     save_weights_every = 20
-    iter_control = 10
+    iter_control = args["iter_control"]
 
     results_dict = {}
 
-    # Init dataset
-    dataset_params = {"mu_vec": (3.0, 1.0),
-                      "batch_size": 1024,
-                      "dependence_parameter": 0.8,
-                      "sigma_vec": (1.0, 1.0)}
+    # Correlated Gaussians
+    if args["dataset"] == "AffineCorrelatedGaussian":
+        dataset_params = {"mu_vec": (3.0, 1.0),
+                          "batch_size": 32,
+                          "dependence_parameter": 0.8,
+                          "sigma_vec": (1.0, 1.0)}
+        dataset_class = AffineCorrelatedGaussian
+        model_params = {"learning_rate": 1e-3,
+                        "hidden_dim": 6,
+                        "intrinsic_noise": 0.0,
+                        "reg_coef": 0.0,
+                        "W1_0": None,
+                        "W2_0": None}
 
-    model_params = {"learning_rate": 1e-3,
-                    "hidden_dim": 4,
-                    "intrinsic_noise": 0.05,
-                    "reg_coef": 0.0,
-                    "W1_0": None,
-                    "W2_0": None}
+    # Semantic task
+    elif args["dataset"] == "Semantic":
+        dataset_params = {"batch_size": 32,
+                          "h_levels": 4}
+        dataset_class = SemanticTask
+        model_params = {"learning_rate": 1e-3,
+                        "hidden_dim": 30,
+                        "intrinsic_noise": 0.0,
+                        "reg_coef": 0.0,
+                        "W1_0": None,
+                        "W2_0": None}
+
+    # MNIST
+    elif args["dataset"] == "MNIST":
+        dataset_params = {"batch_size": 32,
+                          "new_shape": (5, 5),
+                          "subset": (1, 3)}
+        dataset_class = MNIST
+        model_params = {"learning_rate": 1e-3,
+                        "hidden_dim": 50,
+                        "intrinsic_noise": 0.0,
+                        "reg_coef": 0.0,
+                        "W1_0": None,
+                        "W2_0": None}
+
+    else:
+        print("Invalid dataset")
+        return
 
     control_params = {"control_lower_bound": -0.5,
                       "control_upper_bound": 0.5,
@@ -40,7 +89,7 @@ def main():
                       "control_lr": 10.0}
 
     # Init dataset
-    dataset = AffineCorrelatedGaussian(**dataset_params)
+    dataset = dataset_class(**dataset_params)
     model_params["input_dim"] = dataset.input_dim
     model_params["output_dim"] = dataset.output_dim
 
@@ -69,8 +118,6 @@ def main():
     equation_params = {"in_cov": input_corr,
                        "out_cov": output_corr,
                        "in_out_cov": input_output_corr,
-                       # "expected_y": expected_y,
-                       # "expected_x": expected_x,
                        "init_weights": init_weights,
                        "n_steps": n_steps,
                        "reg_coef": model_params["reg_coef"],
@@ -81,7 +128,7 @@ def main():
     solver = LinearNetEq(**equation_params)
 
     # Initialize control
-    control_params = {**control_params, **equation_params}
+    control_params = {**control_params, **copy.deepcopy(equation_params)}
     control = LinearNetControl(**control_params)
 
     W1_t, W2_t = solver.get_weights(time_span, get_numpy=True)
@@ -157,4 +204,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

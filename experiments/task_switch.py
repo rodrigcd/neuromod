@@ -179,10 +179,7 @@ def main(argv):
                                                                         n_steps=n_steps,
                                                                         save_weights_every=save_weights_every,
                                                                         control_signal=control_signal)
-    results_dict["Loss_t_sim_OPT"] = loss_OPT
-    results_dict["weights_sim_OPT"] = weights_OPT
-    results_dict["weights_iters_sim_OPT"] = weights_iter_OPT
-    results_dict["iters_OPT"] = iters
+
 
     results_dict["Loss_t_sim_OPT"] = loss_OPT
     results_dict["weights_sim_OPT"] = weights_OPT
