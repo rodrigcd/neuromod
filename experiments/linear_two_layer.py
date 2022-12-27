@@ -199,6 +199,7 @@ def main(argv):
 
     time_str = get_date_time()
     saving_path = os.path.join(results_path, run_name + "_" + time_str)
+    print("### Saving to", saving_path, "###")
     save_var(results_dict, "results.pkl", results_path=saving_path)
     save_var(params_dict, "params.pkl", results_path=saving_path)
 
