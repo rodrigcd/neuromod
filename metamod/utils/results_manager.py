@@ -15,18 +15,20 @@ class ResultsManager(object):
         self.params, self.results = load_results(self.results_path)
         self.results["W1_sim"], self.results["W2_sim"] = self.results["weights_sim"]
         self._plot_settings()
-
         if verbose:
-            print("### Results from", self.results_path, "###")
-            print("### Param Keys ###")
-            for key in self.params.keys():
-                print("---", key, "---")
-                mssg = []
-                for sub_key in self.params[key].keys():
-                    mssg.append(sub_key)
-                print(", ".join(mssg))
-            print("### Results Keys ###")
-            print(self.results.keys())
+            self.show_keys()
+
+    def show_keys(self):
+        print("### Results from", self.results_path, "###")
+        print("### Param Keys ###")
+        for key in self.params.keys():
+            print("---", key, "---")
+            mssg = []
+            for sub_key in self.params[key].keys():
+                mssg.append(sub_key)
+            print(", ".join(mssg))
+        print("### Results Keys ###")
+        print(self.results.keys())
 
     def _plot_settings(self):
 
