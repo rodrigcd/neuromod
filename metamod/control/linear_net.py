@@ -18,8 +18,8 @@ class LinearNetEq(object):
         self.learning_rate = learning_rate
         self.intrinsic_noise = intrinsic_noise
         self.n_steps = n_steps
-        self.W1 = torch.from_numpy(init_weights[0]).type(self.dtype).to(self.device)
-        self.W2 = torch.from_numpy(init_weights[1]).type(self.dtype).to(self.device)
+        self.W1 = torch.tensor(init_weights[0], dtype=self.dtype, device=self.device)
+        self.W2 = torch.tensor(init_weights[1], dtype=self.dtype, device=self.device)
         self.input_dim = self.W1.shape[1]
         self.hidden_dim = self.W1.shape[0]
         self.output_dim = self.W2.shape[0]
