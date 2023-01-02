@@ -5,7 +5,9 @@ import torch
 
 class QAnalysis(object):
 
-    def __init__(self, results_path, optimizing_window=100, verbose=False, q_iters=100, q_opt_lr=1.0):
+    def __init__(self, results_path, optimizing_window=100, verbose=False, q_iters=2000, q_opt_lr=0.01):
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.dtype = torch.float32
         self.verbose = verbose
         self.results_path = results_path
         self.optimizing_window = optimizing_window
@@ -13,6 +15,11 @@ class QAnalysis(object):
         self.Q_opt_lr = q_opt_lr
         self.results = ResultsManager(results_path, verbose=verbose)
         self.net_eq = self.results.params["equation_params"]["solver"]
+        self.reg_coef = self.net_eq.reg_coef
+        self.time_constant = self.net_eq.time_constant
+        self.time_span = np.arange(self.optimizing_window) * self.net_eq.learning_rate
+        self.dt = self.time_span[1] - self.time_span[0]
+        self.intrinsic_noise = self.net_eq.intrinsic_noise
         self.dataset = self.results.params["dataset_params"]["dataset"]
         self.change_tasks_every = self.dataset.change_tasks_every
         self.n_steps = self.results.params["equation_params"]["n_steps"]
@@ -59,19 +66,17 @@ class QAnalysis(object):
 
     def estimate_best_q(self, task1_svd, task2_cov):
         # Move variables to device
-        device = self.net_eq.device
-        dtype = self.net_eq.dtype
         gpu_svd = {}
         for key, value in task1_svd.items():
-            gpu_svd[key] = torch.tensor(value, dtype=dtype, device=device, requires_grad=False)
+            gpu_svd[key] = torch.tensor(value, dtype=self.dtype, device=self.device, requires_grad=False)
         gpu_cov = []
         for value in task2_cov:
-            gpu_cov.append(torch.tensor(value, dtype=dtype, device=device, requires_grad=False))
+            gpu_cov.append(torch.tensor(value, dtype=self.dtype, device=self.device, requires_grad=False))
 
         # Initialize Q
         hidden_units = self.net_eq.hidden_dim
-        Q_matrix = torch.normal(mean=0, std=0.01, size=(hidden_units, task1_svd["S"].shape[1]),
-                                requires_grad=True, device=device, dtype=dtype)
+        Q_matrix = torch.normal(mean=0, std=2.0, size=(hidden_units, task1_svd["S"].shape[1]),
+                                requires_grad=True, device=self.device, dtype=self.dtype)
         Q_inverse = torch.linalg.pinv(Q_matrix)
 
         # Build weights
@@ -79,42 +84,75 @@ class QAnalysis(object):
         W1_task_init = Q_matrix @ torch.sqrt(gpu_svd["S_prime"]).T @ gpu_svd["V_T"]
 
         # Replace init weights and optimizing period
-        self.net_eq.W1 = W1_task_init
-        self.net_eq.W2 = W2_task_init
-        self.net_eq.time_span = np.arange(self.optimizing_window) * self.net_eq.learning_rate
-        dt = self.net_eq.time_span[1] - self.net_eq.time_span[0]
+        W1 = W1_task_init
+        W2 = W2_task_init
 
-        # Adjust covariance for second task
-        self.net_eq.in_out_cov = gpu_cov[2]
-        self.net_eq.in_cov = gpu_cov[0]
-        self.net_eq.out_cov = gpu_cov[1]
-        self.net_eq.n_steps = self.optimizing_window
-        self.net_eq.in_out_cov_list = [task2_cov[2], ]
-        self.net_eq.in_cov_list = [task2_cov[0], ]
-        self.net_eq.out_cov_list = [task2_cov[1], ]
-        self.net_eq.change_task_every = self.optimizing_window + 100
-        self.net_eq.current_dataset_id = 0
-        self.net_eq._generate_cov_matrices()
+        input_corr, output_corr, input_output_corr, expected_y, expected_x = gpu_cov
 
         # Run loop
         loss_trajectories = []
         for i in range(self.Q_iters):
-            W1_t, W2_t = self.net_eq.get_weights(self.net_eq.time_span)
-            L_t = self.net_eq.get_loss_function(W1=W1_t, W2=W2_t)
+            W1_t, W2_t = self.get_weights(self.time_span, W1, W2,
+                                          in_out_cov=input_output_corr,
+                                          in_cov=input_corr)
+            L_t = self.get_loss_function(W1=W1_t, W2=W2_t,
+                                         in_out_cov=input_output_corr,
+                                         in_cov=input_corr,
+                                         out_cov=output_corr)
             loss_trajectories.append(L_t.detach().cpu().numpy())
-            print("Loss integral:", np.sum(loss_trajectories)*dt)
-            loss_integral = torch.sum(L_t)*dt
+            loss_integral = torch.sum(L_t)*self.dt
+            # print("Loss integral:", loss_integral.detach().cpu().numpy())
+            # print("Init loss:", L_t.detach().cpu().numpy()[0])
             loss_integral.backward()
             with torch.no_grad():
-                Q_matrix += self.Q_opt_lr * Q_matrix.grad
+                Q_matrix -= self.Q_opt_lr * Q_matrix.grad
             Q_inverse = torch.linalg.pinv(Q_matrix)
             # Build weights
             W2_task_init = gpu_svd["U"] @ torch.sqrt(gpu_svd["S"]) @ Q_inverse
             W1_task_init = Q_matrix @ torch.sqrt(gpu_svd["S_prime"]).T @ gpu_svd["V_T"]
-            self.net_eq.W1 = W1_task_init
-            self.net_eq.W2 = W2_task_init
-
+            W1 = W1_task_init
+            W2 = W2_task_init
         return loss_trajectories, Q_matrix
+
+    def weight_der(self, t, W1, W2, in_out_cov, in_cov, t_index=None):
+        if t_index is None:
+            t_index = (self.time_span == t).nonzero(as_tuple=True)[0][0]
+
+        dW1 = (W2.T @ (in_out_cov.T - W2 @ W1 @ in_cov) - self.reg_coef * W1)/self.time_constant
+        dW2 = ((in_out_cov.T - W2 @ W1 @ in_cov) @ W1.T - self.reg_coef * W2)/self.time_constant
+        return dW1, dW2
+
+    def get_weights(self, time_span, W1_0, W2_0, in_out_cov, in_cov, get_numpy=False):
+        W1_t = []
+        W2_t = []
+        current_W1 = torch.clone(W1_0)
+        current_W2 = torch.clone(W2_0)
+        W1_t.append(current_W1)
+        W2_t.append(current_W2)
+        for i, t in enumerate(time_span[:-1]):
+            dW1, dW2 = self.weight_der(t, current_W1, current_W2, in_out_cov, in_cov, t_index=i)
+            current_W1 = dW1 * self.dt + current_W1
+            current_W2 = dW2 * self.dt + current_W2
+            W1_t.append(current_W1)
+            W2_t.append(current_W2)
+        W1_t = torch.stack(W1_t, dim=0)
+        W2_t = torch.stack(W2_t, dim=0)
+        if get_numpy:
+            return W1_t.detach().cpu().numpy(), W2_t.detach().cpu().numpy()
+        else:
+            return W1_t, W2_t
+
+    def get_loss_function(self, W1, W2, in_out_cov, in_cov, out_cov, get_numpy=False):
+        W_t = W2 @ W1
+        L1 = 0.5*(torch.trace(out_cov) - torch.diagonal(2*in_out_cov @ W_t, dim1=-2, dim2=-1).sum(-1)
+                          + torch.diagonal(in_cov @ torch.transpose(W_t, dim0=-1, dim1=-2) @ W_t,
+                                           dim1=-2, dim2=-1).sum(-1)) + 0.5*W_t.shape[1]*self.intrinsic_noise**2
+        L2 = (self.reg_coef/2.0)*(torch.sum(W1**2, (-1, -2)) + torch.sum(W2**2, (-1, -2)))
+        L = L1 + L2
+        if get_numpy:
+            return L.detach().cpu().numpy()
+        else:
+            return L
 
     def _estimate_q_from_weights(self, W1_t, W2_t):
         if self.verbose:
@@ -149,5 +187,10 @@ if __name__ == "__main__":
     verbose = True
     results_path = "../../results/task_switch_main/slow_switch_run0_AffineCorrelatedGaussian_27-12-2022_20-36-08-225"
     qa = QAnalysis(results_path=results_path, verbose=verbose)
-    loss_trajectories, Q = qa.estimate_best_q(qa.svd_task1, qa.cov_matrix_task2)
+    loss_trajectories, Q12 = qa.estimate_best_q(qa.svd_task1, qa.cov_matrix_task2)
+    print("First Q12", Q12)
+    loss_trajectories, Q12 = qa.estimate_best_q(qa.svd_task1, qa.cov_matrix_task2)
+    print("Second Q12", Q12)
+    loss_trajectories, Q12 = qa.estimate_best_q(qa.svd_task1, qa.cov_matrix_task2)
+    print("Third Q12", Q12)
     print("debug")
