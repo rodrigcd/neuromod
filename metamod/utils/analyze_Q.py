@@ -1,6 +1,7 @@
 import numpy as np
 from metamod.utils import ResultsManager
 import torch
+from tqdm import tqdm
 
 
 class QAnalysis(object):
@@ -23,6 +24,7 @@ class QAnalysis(object):
         self.dataset = self.results.params["dataset_params"]["dataset"]
         self.change_tasks_every = self.dataset.change_tasks_every
         self.n_steps = self.results.params["equation_params"]["n_steps"]
+        self.iters = np.arange(self.n_steps)
         self._compute_regression_solution()
 
     def _compute_regression_solution(self):
@@ -91,7 +93,7 @@ class QAnalysis(object):
 
         # Run loop
         loss_trajectories = []
-        for i in range(self.Q_iters):
+        for i in tqdm(range(self.Q_iters), disable=(not self.verbose)):
             W1_t, W2_t = self.get_weights(self.time_span, W1, W2,
                                           in_out_cov=input_output_corr,
                                           in_cov=input_corr)
@@ -112,7 +114,7 @@ class QAnalysis(object):
             W1_task_init = Q_matrix @ torch.sqrt(gpu_svd["S_prime"]).T @ gpu_svd["V_T"]
             W1 = W1_task_init
             W2 = W2_task_init
-        return loss_trajectories, Q_matrix
+        return loss_trajectories, Q_matrix.detach().cpu().numpy()
 
     def weight_der(self, t, W1, W2, in_out_cov, in_cov, t_index=None):
         if t_index is None:
@@ -182,6 +184,21 @@ class QAnalysis(object):
         loss = 0.5 * (np.trace(out_cov) - np.trace(2 * in_out_cov @ sol) + np.trace(in_cov @ sol.T @ sol))
         return loss
 
+    def sample_optimal_qs(self, task1_svd, task2_cov, n_qs=20):
+        all_Qs = []
+        i = 0
+        while True:
+            try:
+                _, Q = self.estimate_best_q(task1_svd, task2_cov)
+            except:
+                continue
+            all_Qs.append(Q)
+            i += 1
+            if i == n_qs:
+                break
+        return np.stack(all_Qs, axis=0)
+
+
 
 if __name__ == "__main__":
     verbose = True
@@ -189,8 +206,17 @@ if __name__ == "__main__":
     qa = QAnalysis(results_path=results_path, verbose=verbose)
     loss_trajectories, Q12 = qa.estimate_best_q(qa.svd_task1, qa.cov_matrix_task2)
     print("First Q12", Q12)
+    print("row_mean", torch.mean(Q12, dim=0))
+    print("col_mean", torch.mean(Q12, dim=1))
+    print("all_mean", torch.mean(Q12, dim=(0, 1)))
     loss_trajectories, Q12 = qa.estimate_best_q(qa.svd_task1, qa.cov_matrix_task2)
     print("Second Q12", Q12)
+    print("row_mean", torch.mean(Q12, dim=0))
+    print("col_mean", torch.mean(Q12, dim=1))
+    print("all_mean", torch.mean(Q12, dim=(0, 1)))
     loss_trajectories, Q12 = qa.estimate_best_q(qa.svd_task1, qa.cov_matrix_task2)
     print("Third Q12", Q12)
+    print("row_mean", torch.mean(Q12, dim=0))
+    print("col_mean", torch.mean(Q12, dim=1))
+    print("all_mean", torch.mean(Q12, dim=(0, 1)))
     print("debug")

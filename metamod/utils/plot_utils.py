@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 
 from bokeh.plotting import figure, show, output_file, save
@@ -80,6 +81,8 @@ def plot_net_reward(x_vals, losses=(), control_costs=(), reward_convertion=1.0, 
 def single_task_plot(manager_list, ax=None, **plot_kwargs):
     fontsize = plot_kwargs["fontsize"]
     line_width = plot_kwargs["line_width"]
+    skip_xlabel = plot_kwargs["skip_xlabel"]
+    label_in_title = plot_kwargs["label_in_title"]
     x_lim = None
     if "x_lim" in plot_kwargs.keys():
         x_lim = plot_kwargs["x_lim"]
@@ -110,11 +113,15 @@ def single_task_plot(manager_list, ax=None, **plot_kwargs):
                     color='k', alpha=0.3)
     ax[plot_index].fill_between(iters, mean_control_losses - 2*std_control_losses, mean_control_losses + 2*std_control_losses,
                     color='C0', alpha=0.3)
-    # ax[plot_index].legend(fontsize=fontsize-2)
+    if not skip_xlabel:
+        ax[plot_index].set_xlabel("Task time", fontsize=fontsize)
     ax[plot_index].set_xlim(x_lim)
-    ax[plot_index].set_xlabel("Task time", fontsize=fontsize)
-    ax[plot_index].set_ylabel("$\mathcal{L}(t)$", fontsize=fontsize)
+    if label_in_title:
+        ax[plot_index].set_title("$\mathcal{L}(t)$", fontsize=fontsize)
+    else:
+        ax[plot_index].set_ylabel("$\mathcal{L}(t)$", fontsize=fontsize)
     ax[plot_index].tick_params(axis='both', which='major', labelsize=fontsize-2)
+    # ax[plot_index].legend(fontsize=fontsize - 2)
 
     ###########################
     # Net instant reward rate #
@@ -150,8 +157,12 @@ def single_task_plot(manager_list, ax=None, **plot_kwargs):
                     color='C0', alpha=0.3)
     ax[plot_index].set_xlim(x_lim)
     ax[plot_index].legend(fontsize=fontsize-2)
-    ax[plot_index].set_xlabel("Task time", fontsize=fontsize)
-    ax[plot_index].set_ylabel("$v(t) = -\eta \mathcal{L}(t) - C(G(t))$", fontsize=fontsize)
+    if not skip_xlabel:
+        ax[plot_index].set_xlabel("Task time", fontsize=fontsize)
+    if label_in_title:
+        ax[plot_index].set_title("$v(t) = -\eta \mathcal{L}(t) - C(G(t))$", fontsize=fontsize)
+    else:
+        ax[plot_index].set_ylabel("$v(t) = -\eta \mathcal{L}(t) - C(G(t))$", fontsize=fontsize)
     ax[plot_index].tick_params(axis='both', which='major', labelsize=fontsize-2)
     # ax[plot_index].text(.01, .99, '(a)', ha='left', va='top', transform=ax[plot_index].transAxes)
 
@@ -186,7 +197,10 @@ def single_task_plot(manager_list, ax=None, **plot_kwargs):
     ax[plot_index].set_xlim(x_lim)
     ax[plot_index].legend(fontsize=fontsize-2)
     ax[plot_index].set_xlabel("Task time", fontsize=fontsize)
-    ax[plot_index].set_ylabel("Wight norms", fontsize=fontsize)
+    if label_in_title:
+        ax[plot_index].set_title("Weight norms", fontsize=fontsize)
+    else:
+        ax[plot_index].set_ylabel("Weight norms", fontsize=fontsize)
     ax[plot_index].tick_params(axis='both', which='major', labelsize=fontsize-2)
 
     ################
@@ -232,10 +246,90 @@ def single_task_plot(manager_list, ax=None, **plot_kwargs):
     ax[plot_index].set_xlim(x_lim)
     ax[plot_index].legend(fontsize=fontsize-2)
     ax[plot_index].set_xlabel("Task time", fontsize=fontsize)
-    ax[plot_index].set_ylabel("Normalize unit", fontsize=fontsize)
+    if label_in_title:
+        ax[plot_index].set_title("Normalized unit", fontsize=fontsize)
+    else:
+        ax[plot_index].set_ylabel("Normalized unit", fontsize=fontsize)
     ax[plot_index].tick_params(axis='both', which='major', labelsize=fontsize-2)
 
     return ax
+
+
+def task_switch_plot(result_manager, **plot_kwargs):
+    fontsize = plot_kwargs["fontsize"]
+    line_width = plot_kwargs["line_width"]
+    figsize = plot_kwargs["figsize"]
+    zoom_xlim = plot_kwargs["zoom_xlim"]
+    zoom_ylim = plot_kwargs["zoom_ylim"]
+
+    fig = plt.figure(figsize=figsize)
+    gs = mpl.gridspec.GridSpec(2, 2, wspace=0.25, hspace=0.25)  # 2x2 grid
+    ax0 = fig.add_subplot(gs[0, :])  # full first row
+    ax1 = fig.add_subplot(gs[1, 0])  # second row, first col
+    ax2 = fig.add_subplot(gs[1, 1])  # second row, second col
+
+    #############
+    # Loss plot #
+    #############
+    loss_t_eq = result_manager.results["Loss_t_eq"]
+    loss_t_control = result_manager.results["Loss_t_control_opt"]
+    iters = result_manager.results["iters"]
+    ax0.plot(iters, loss_t_eq, 'k', lw=line_width, label="Baseline")
+    ax0.plot(iters, loss_t_control, 'C0', lw=line_width, label="Controlled")
+    ax0.legend(fontsize=fontsize-2)
+    ax0.set_xlabel("Task time", fontsize=fontsize)
+    ax0.tick_params(axis='both', which='major', labelsize=fontsize - 2)
+    # Zoom square
+    alpha = 0.8
+    ax0.set_ylim([-0.1, 2.9])
+    ax0.set_xlim([np.amin(iters), np.amax(iters)])
+    ax0.plot([zoom_xlim[0], zoom_xlim[1]], [zoom_ylim[0], zoom_ylim[0]], "C3--", lw=line_width, alpha=alpha)
+    ax0.plot([zoom_xlim[0], zoom_xlim[1]], [zoom_ylim[1], zoom_ylim[1]], "C3--", lw=line_width, alpha=alpha)
+    ax0.plot([zoom_xlim[0], zoom_xlim[0]], [zoom_ylim[0], zoom_ylim[1]], "C3--", lw=line_width, alpha=alpha)
+    ax0.plot([zoom_xlim[1], zoom_xlim[1]], [zoom_ylim[0], zoom_ylim[1]], "C3--", lw=line_width, alpha=alpha)
+    ax0.plot([zoom_xlim[0], 12800], [zoom_ylim[0], -0.8], "C3--", lw=line_width, alpha=alpha, zorder=0, clip_on=False)
+    ax0.plot([zoom_xlim[1], np.amax(iters)], [zoom_ylim[0], -0.8], "C3--", lw=line_width, alpha=alpha, zorder=0, clip_on=False)
+    ax0.set_ylabel("$\mathcal{L}(t)$", fontsize=fontsize)
+
+
+    #############
+    # Zoom plot #
+    #############
+    G1_tilda, G2_tilda = result_manager.results["control_signal"]
+    switch_every = result_manager.params["dataset_params"]["change_tasks_every"]
+    n_steps = result_manager.params["equation_params"]["n_steps"]
+    cost_coef = result_manager.params["control_params"]["cost_coef"]
+    peak_iters = np.arange(int(n_steps/switch_every))*switch_every
+
+    G1_tilda, G2_tilda = G1_tilda.detach().cpu().numpy(), G2_tilda.detach().cpu().numpy()
+    G1_t = G1_tilda - np.ones(G1_tilda.shape)
+    G2_t = G2_tilda - np.ones(G2_tilda.shape)
+    _, G1_norm = compute_weight_sparsity(G1_t)
+    _, G2_norm = compute_weight_sparsity(G2_t)
+
+    G_cost = cost_coef*(G1_norm + G2_norm)
+    G_cost = G_cost/np.amax(G_cost)
+
+    ax2.plot(iters, loss_t_eq, 'k', lw=line_width)
+    ax2.plot(iters, loss_t_control, 'C0', lw=line_width)
+    ax2.plot(iters, G_cost, "C2--", lw=line_width, label="Normalized $C(G(t))$")
+    ax2.legend(fontsize=fontsize-2)
+    ax2.set_xlabel("Task time", fontsize=fontsize)
+    ax2.set_xlim(zoom_xlim)
+    ax2.set_ylim(zoom_ylim)
+    ax2.legend(fontsize=fontsize-2)
+    ax2.tick_params(axis='both', which='major', labelsize=fontsize - 2)
+
+    ################################
+    # Loss peaks and control peaks #
+    ################################
+    ax1.plot(iters[peak_iters], loss_t_eq[peak_iters], 'k-o', lw=line_width)#, label="Baseline $\mathcal{L}(t)$")
+    ax1.plot(iters[peak_iters], loss_t_control[peak_iters], 'C0-o', lw=line_width)#, label="Control $\mathcal{L}(t)$")
+    ax1.plot(iters[peak_iters], G_cost[peak_iters], 'C2-o', lw=line_width) #label="Normalized $C(G(t))$")
+    # ax1.legend(fontsize=fontsize-2)
+    ax1.set_xlabel("Task time", fontsize=fontsize)
+    ax1.tick_params(axis='both', which='major', labelsize=fontsize - 2)
+    ax1.set_ylabel("Values at switch time", fontsize=fontsize)
 
 
 def compute_control_cost(G1_t, G2_t, cost_coef):
