@@ -27,6 +27,36 @@ class QAnalysis(object):
         self.iters = np.arange(self.n_steps)
         self._compute_regression_solution()
 
+    def _compute_fixed_point(self):
+        fixed_point_W1 = []
+        fixed_point_W2 = []
+        G1_tilda, G2_tilda = self.results.results["control_signal"]
+        G1_tilda, G2_tilda = G1_tilda.detach().cpu().numpy(), G2_tilda.detach().cpu().numpy()
+        W1_tilde = G1_tilda * self.control_W1
+        W2_tilde = G2_tilda * self.control_W2
+        task2_solution = self.task2_solution
+        task1_solution = self.task1_solution
+        task_solutions = [task1_solution, task2_solution]
+        baseline_fixed_point = []
+        control_fixed_point = []
+        for t_index in self.iters:
+            section = np.floor(t_index / self.change_tasks_every)
+            current_dataset_id = int(section % len(self.dataset.dataset_classes))
+            baseline_fixed_point.append(task_solutions[current_dataset_id])
+
+            G1 = G1_tilda[t_index, :, :]
+            G2 = G1_tilda[t_index, :, :]
+            W1_tilde_t = W1_tilde[t_index, :, :]
+            W2_tilde_t = W2_tilde[t_index, :, :]
+
+            W1_fixed_pont = (baseline_fixed_point[-1] @ np.linalg.inv(W1_tilde_t @ W1_tilde_t.T) @ W1_tilde_t.T)/G1
+            W2_fixed_point = (W2_tilde_t.T @ np.linalg.inv(W2_tilde_t @ W2_tilde_t.t) @ baseline_fixed_point[-1])/G2
+
+            control_fixed_point.append(W2_fixed_point @ W1_fixed_pont)
+
+        return np.stack(baseline_fixed_point), np.stack(control_fixed_point)
+
+
     def _compute_regression_solution(self):
         if self.verbose:
             print("Computing regression solution")
