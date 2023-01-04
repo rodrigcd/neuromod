@@ -66,6 +66,12 @@ class QAnalysis(object):
         self.control_Q1, self.control_Q2, _ = self._estimate_q_from_weights(self.control_W1,
                                                                             self.control_W2)
 
+        G1_tilda, G2_tilda = self.results.results["control_signal"]
+        G1_tilda, G2_tilda = G1_tilda.detach().cpu().numpy(), G2_tilda.detach().cpu().numpy()
+        W1_tilde = G1_tilda * self.control_W1
+        W2_tilde = G2_tilda * self.control_W2
+        self.tilde_Q1, self.tilde_Q2, _ = self._estimate_q_from_weights(W1_tilde, W2_tilde)
+
     def estimate_best_q(self, task1_svd, task2_cov):
         # Move variables to device
         gpu_svd = {}
@@ -77,8 +83,9 @@ class QAnalysis(object):
 
         # Initialize Q
         hidden_units = self.net_eq.hidden_dim
-        Q_matrix = torch.normal(mean=0, std=2.0, size=(hidden_units, task1_svd["S"].shape[1]),
-                                requires_grad=True, device=self.device, dtype=self.dtype)
+        Q_matrix = np.random.normal(loc=0, scale=2.0, size=(hidden_units, task1_svd["S"].shape[1]))
+        Q_matrix[:, -1] = 0
+        Q_matrix = torch.tensor(Q_matrix, requires_grad=True, device=self.device, dtype=self.dtype)
         Q_inverse = torch.linalg.pinv(Q_matrix)
 
         # Build weights
@@ -186,18 +193,19 @@ class QAnalysis(object):
 
     def sample_optimal_qs(self, task1_svd, task2_cov, n_qs=20):
         all_Qs = []
+        last_loss = []
         i = 0
         while True:
             try:
-                _, Q = self.estimate_best_q(task1_svd, task2_cov)
+                loss, Q = self.estimate_best_q(task1_svd, task2_cov)
             except:
                 continue
             all_Qs.append(Q)
+            last_loss.append(np.sum(loss[-1])*self.dt)
             i += 1
             if i == n_qs:
                 break
-        return np.stack(all_Qs, axis=0)
-
+        return np.stack(all_Qs, axis=0), np.array(last_loss)
 
 
 if __name__ == "__main__":
