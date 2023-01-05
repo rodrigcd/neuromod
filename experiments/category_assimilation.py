@@ -3,13 +3,14 @@ import copy
 import numpy as np
 from tqdm import tqdm
 import os
-from metamod.control import LinearNetEq, LinearNetControl
+from metamod.control import LinearNetEq, LinearNetConstrainedG
 from metamod.tasks import AffineCorrelatedGaussian, SemanticTask, MNIST
 from metamod.trainers import two_layer_training
 from metamod.networks import LinearNet
 from metamod.utils import save_var, get_date_time
 import argparse
 import sys
+import torch
 
 
 def main(argv):
@@ -19,62 +20,52 @@ def main(argv):
     parser.add_argument(
         '--run-name', type=str, default="test_run")
     parser.add_argument(
-        '--save-path', type=str, default="../results/two_layer_linear/")
+        '--save-path', type=str, default="../results/category_assimilation/")
     parser.add_argument(
-        '--dataset', type=str, default="AffineCorrelatedGaussian")
-    parser.add_argument(
-        '--n-steps', type=int, default=10000)
-    parser.add_argument(
-        '--iter-control', type=int, default=500)
+        '--run-id', type=int, default=0)
     args = parser.parse_args(argv)
     args = vars(args)
 
+    if args["run_id"] % 2 == 0:
+        args["dataset"] = "Semantic"
+    else:
+        args["dataset"] = "MNIST"
     run_name = args["run_name"] + "_" + args["dataset"]
     results_path = args["save_path"]
-    n_steps = args["n_steps"]
     save_weights_every = 20
-    iter_control = args["iter_control"]
 
     results_dict = {}
 
-    # Correlated Gaussians
-    if args["dataset"] == "AffineCorrelatedGaussian":
-        dataset_params = {"mu_vec": (3.0, 1.0),
-                          "batch_size": 32,
-                          "dependence_parameter": 0.8,
-                          "sigma_vec": (1.0, 1.0)}
-        dataset_class = AffineCorrelatedGaussian
-        model_params = {"learning_rate": 5e-3,
-                        "hidden_dim": 6,
-                        "intrinsic_noise": 0.0,
-                        "reg_coef": 0.0,
-                        "W1_0": None,
-                        "W2_0": None}
-
     # Semantic task
-    elif args["dataset"] == "Semantic":
+    if args["dataset"] == "Semantic":
         dataset_params = {"batch_size": 32,
                           "h_levels": 4}
         dataset_class = SemanticTask
         model_params = {"learning_rate": 5e-3,
-                        "hidden_dim": 30,
+                        "hidden_dim": 20,
                         "intrinsic_noise": 0.0,
                         "reg_coef": 0.0,
                         "W1_0": None,
                         "W2_0": None}
+        control_lr = 1.0
+        iter_control = 600
+        n_steps = 8000
 
     # MNIST
     elif args["dataset"] == "MNIST":
-        dataset_params = {"batch_size": 32,
+        dataset_params = {"batch_size": 256,
                           "new_shape": (5, 5),
-                          "subset": (1, 3)}
+                          "subset": (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)}
         dataset_class = MNIST
-        model_params = {"learning_rate": 5e-3,
+        model_params = {"learning_rate": 5e-2,
                         "hidden_dim": 50,
                         "intrinsic_noise": 0.0,
                         "reg_coef": 0.0,
                         "W1_0": None,
                         "W2_0": None}
+        control_lr = 10.0
+        iter_control = 600
+        n_steps = 30000
 
     else:
         print("Invalid dataset")
@@ -83,10 +74,13 @@ def main(argv):
     control_params = {"control_lower_bound": -0.5,
                       "control_upper_bound": 0.5,
                       "gamma": 0.99,
-                      "cost_coef": 0.3,
+                      "cost_coef": 0.1,
                       "reward_convertion": 1.0,
                       "init_g": None,
-                      "control_lr": 10.0}
+                      "control_lr": control_lr,
+                      "control_base": "neural_base",
+                      "update_first_layer": False,
+                      "update_second_layer": True}
 
     # Init dataset
     dataset = dataset_class(**dataset_params)
@@ -109,6 +103,8 @@ def main(argv):
     init_W1 = weights[0][0, ...]
     init_W2 = weights[1][0, ...]
 
+    control_params["degree_of_control"] = init_W2.shape[0]
+
     init_weights = [init_W1, init_W2]
     input_corr, output_corr, input_output_corr, expected_y, expected_x = dataset.get_correlation_matrix()
 
@@ -129,7 +125,7 @@ def main(argv):
 
     # Initialize control
     control_params = {**control_params, **copy.deepcopy(equation_params)}
-    control = LinearNetControl(**control_params)
+    control = LinearNetConstrainedG(**control_params)
 
     W1_t, W2_t = solver.get_weights(time_span, get_numpy=True)
     Loss_t = solver.get_loss_function(W1_t, W2_t, get_numpy=True)
@@ -162,11 +158,12 @@ def main(argv):
     results_dict["W2_t_control_opt"] = W2_t_opt
     results_dict["Loss_t_control_opt"] = Loss_t_opt
 
-    g1_tilda = control.g1_tilda
-    g2_tilda = control.g2_tilda
+    g1_tilda = torch.clone(control.g1_tilda).detach()
+    g2_tilda = torch.clone(control.g2_tilda).detach()
     control_signal = (g1_tilda, g2_tilda)
     W1_0, W2_0 = control_params["init_weights"]
     results_dict["control_signal"] = control_signal
+    results_dict["nus"] = (control.nus_1, control.nus_2)
 
     reset_model_params = model_params.copy()
     reset_model_params["W1_0"] = W1_0
