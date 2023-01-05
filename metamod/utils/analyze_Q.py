@@ -26,10 +26,9 @@ class QAnalysis(object):
         self.n_steps = self.results.params["equation_params"]["n_steps"]
         self.iters = np.arange(self.n_steps)
         self._compute_regression_solution()
+        self.baseline_fp, self.control_fp = self._compute_fixed_point()
 
     def _compute_fixed_point(self):
-        fixed_point_W1 = []
-        fixed_point_W2 = []
         G1_tilda, G2_tilda = self.results.results["control_signal"]
         G1_tilda, G2_tilda = G1_tilda.detach().cpu().numpy(), G2_tilda.detach().cpu().numpy()
         W1_tilde = G1_tilda * self.control_W1
@@ -45,17 +44,14 @@ class QAnalysis(object):
             baseline_fixed_point.append(task_solutions[current_dataset_id])
 
             G1 = G1_tilda[t_index, :, :]
-            G2 = G1_tilda[t_index, :, :]
+            G2 = G2_tilda[t_index, :, :]
             W1_tilde_t = W1_tilde[t_index, :, :]
-            W2_tilde_t = W2_tilde[t_index, :, :]
 
-            W1_fixed_pont = (baseline_fixed_point[-1] @ np.linalg.inv(W1_tilde_t @ W1_tilde_t.T) @ W1_tilde_t.T)/G1
-            W2_fixed_point = (W2_tilde_t.T @ np.linalg.inv(W2_tilde_t @ W2_tilde_t.t) @ baseline_fixed_point[-1])/G2
-
-            control_fixed_point.append(W2_fixed_point @ W1_fixed_pont)
+            fixed_point_W2 = (baseline_fixed_point[-1] @ (np.linalg.inv(W1_tilde_t.T @ W1_tilde_t) @ W1_tilde_t.T))/G2
+            fixed_point = fixed_point_W2 @ (W1_tilde_t/G1)
+            control_fixed_point.append(fixed_point)
 
         return np.stack(baseline_fixed_point), np.stack(control_fixed_point)
-
 
     def _compute_regression_solution(self):
         if self.verbose:
@@ -98,9 +94,9 @@ class QAnalysis(object):
 
         G1_tilda, G2_tilda = self.results.results["control_signal"]
         G1_tilda, G2_tilda = G1_tilda.detach().cpu().numpy(), G2_tilda.detach().cpu().numpy()
-        W1_tilde = G1_tilda * self.control_W1
-        W2_tilde = G2_tilda * self.control_W2
-        self.tilde_Q1, self.tilde_Q2, _ = self._estimate_q_from_weights(W1_tilde, W2_tilde)
+        self.W1_tilde = G1_tilda * self.control_W1
+        self.W2_tilde = G2_tilda * self.control_W2
+        self.tilde_Q1, self.tilde_Q2, _ = self._estimate_q_from_weights(self.W1_tilde, self.W2_tilde)
 
     def estimate_best_q(self, task1_svd, task2_cov):
         # Move variables to device

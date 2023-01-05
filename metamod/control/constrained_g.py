@@ -9,10 +9,13 @@ class LinearNetConstrainedG(LinearNetControl):
     def __init__(self, in_out_cov, in_cov, out_cov, init_weights, reg_coef,
                  intrinsic_noise, learning_rate=1e-5, n_steps=10000, time_constant=1.0,
                  control_lower_bound=0.0, control_upper_bound=0.5, init_g=None, gamma=0.99, cost_coef=0.3,
-                 reward_convertion=1.0, control_lr=1e-4, degree_of_control="full", control_base="canonical"):
+                 reward_convertion=1.0, control_lr=1e-4, degree_of_control="full", control_base="canonical",
+                 update_first_layer=False, update_second_layer=False):
 
         self.degree_of_control = degree_of_control
         self.control_base = control_base
+        self.update_first_layer = update_first_layer
+        self.update_second_layer = update_second_layer
 
         super().__init__(in_out_cov, in_cov, out_cov, init_weights, reg_coef,
                          intrinsic_noise, learning_rate, n_steps, time_constant,
@@ -34,12 +37,20 @@ class LinearNetConstrainedG(LinearNetControl):
             nus.data.clamp_(max=self.control_upper_bound)
 
         if self.update_layer == 0:
-            self.nus_1 = nus
+            if not self.update_first_layer:
+                self.nus_1 = torch.zeros(size=(shape[0], 1, 1, self.degree_of_control),
+                                         requires_grad=False, device=self.device, dtype=self.dtype)
+            else:
+                self.nus_1 = nus
             self.g_base1 = g_base
             g_per_degree = self.nus_1 * self.g_base1
             g = torch.sum(g_per_degree, dim=3)
         else:
-            self.nus_2 = nus
+            if not self.update_second_layer:
+                self.nus_2 = torch.zeros(size=(shape[0], 1, 1, self.degree_of_control),
+                                         requires_grad=False, device=self.device, dtype=self.dtype)
+            else:
+                self.nus_2 = nus
             self.g_base2 = g_base
             g_per_degree = self.nus_2 * self.g_base2
             g = torch.sum(g_per_degree, dim=3)
@@ -92,3 +103,37 @@ class LinearNetConstrainedG(LinearNetControl):
 
         elif self.control_base == "frequency":
             pass
+
+        elif self.control_base == "neural_base":
+            g_s = torch.zeros(size=(1, shape[1], shape[2], self.degree_of_control),
+                              requires_grad=False, device=self.device, dtype=self.dtype)
+            indexes = np.arange(self.degree_of_control)
+            for i, ind in enumerate(indexes):
+                g_s[0, i, :, i] = torch.ones(size=(shape[2],), requires_grad=False, device=self.device, dtype=self.dtype)
+            return g_s
+
+    def train_step(self, get_numpy=False, lr=None):
+        if lr is None:
+            lr = self.control_lr
+
+        W1_t_control, W2_t_control = self.get_weights(self.time_span)
+        L_t = self.get_loss_function(W1=W1_t_control, W2=W2_t_control)
+        C_t = self.control_cost()
+
+        instant_reward_rate = self.gamma**(self.time_span)*(-self.reward_convertion*L_t-C_t)
+        cumulated_R = torch.sum(instant_reward_rate)*self.dt
+
+        cumulated_R.backward()
+
+        # for iters in range(inner_loop):
+        if self.update_first_layer:
+            self.update_layer = 0
+            self.g1, self.g1_tilda = self._update_g(self.g1, lr=lr)
+        if self.update_second_layer:
+            self.update_layer = 1
+            self.g2, self.g2_tilda = self._update_g(self.g2, lr=lr)
+
+        if get_numpy:
+            return cumulated_R.detach().cpu().numpy()
+        else:
+            return cumulated_R

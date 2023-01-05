@@ -72,7 +72,9 @@ control_params = {**equation_params,
                   "init_g": None,
                   "control_lr": 10.0,
                   "degree_of_control": 3,
-                  "control_base": "canonical"}
+                  "control_base": "neural_base",
+                  "update_first_layer": False,
+                  "update_second_layer": True}
 
 control = LinearNetConstrainedG(**control_params)
 
