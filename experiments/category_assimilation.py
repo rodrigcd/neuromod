@@ -63,7 +63,7 @@ def main(argv):
                         "reg_coef": 0.0,
                         "W1_0": None,
                         "W2_0": None}
-        control_lr = 10.0
+        control_lr = 1.0
         iter_control = 600
         n_steps = 30000
 
