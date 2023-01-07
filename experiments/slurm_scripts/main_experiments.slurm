@@ -1,14 +1,14 @@
 #!/bin/bash
 #
 #SBATCH --job-name=cat_main
-#SBATCH --output=logs/category_assimilation.log
-#SBATCH --error=logs/category_assimilation.log
+#SBATCH --output=logs/out_category_assimilation.log
+#SBATCH --error=logs/err_category_assimilation.log
 #SBATCH -p gpu
 #SBATCH -N 1
 #SBATCH --mem=6G
 #SBATCH --time=0-24:00
 #SBATCH --gres=gpu:1  # this is important to use GPUs
-#SBATCH --array=0-9
+#SBATCH --array=0-4
 
 source /usr/share/modules/init/bash
 module load cuda/11.6
