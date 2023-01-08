@@ -148,7 +148,7 @@ class LinearNetTaskEngControl(LinearNetTaskEngEq):
         self.reward_convertion = reward_convertion
         self.control_lr = control_lr
         self.type_of_engage = type_of_engage
-        self.cost_offset = 0 if type_of_engage == "active" else 1
+        self.cost_offset = 0.0 if type_of_engage == "active" else 1.0
 
         self.input_dim = self.W1.shape[1]
         self.hidden_dim = self.W1.shape[0]

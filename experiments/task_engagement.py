@@ -90,12 +90,19 @@ def main(argv):
         print("Invalid dataset")
         return
 
-    control_params = {"control_lower_bound": -0.5,
-                      "control_upper_bound": 0.5,
+    if engage_type == "active":
+        control_lower_bound = 0.0
+        control_upper_bound = 1.0
+    else:  # Attention
+        control_lower_bound = -0.5
+        control_upper_bound = 0.5
+    control_params = {"control_lower_bound": control_lower_bound,
+                      "control_upper_bound": control_upper_bound,
                       "gamma": 0.99,
                       "cost_coef": 0.1,
                       "reward_convertion": 1.0,
-                      "control_lr": control_lr}
+                      "control_lr": control_lr,
+                      "type_of_engage": engage_type}
 
     # Init dataset
     dataset = dataset_class(**dataset_params)

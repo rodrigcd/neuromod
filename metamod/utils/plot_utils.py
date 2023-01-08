@@ -332,7 +332,7 @@ def task_switch_plot(result_manager, **plot_kwargs):
     ax1.set_ylabel("Values at switch time", fontsize=fontsize)
 
 
-def cat_assimilation_plot(result_manager1, result_manager2, **plot_kwargs):
+def cat_assimilation_plot(result_manager1_list, result_manager2_list, **plot_kwargs):
     fontsize = plot_kwargs["fontsize"]
     figsize = plot_kwargs["figsize"]
     line_width = plot_kwargs["line_width"]
@@ -343,28 +343,51 @@ def cat_assimilation_plot(result_manager1, result_manager2, **plot_kwargs):
     f, ax = plt.subplots(2, 2, figsize=figsize)
 
     ### LOSS PLOT ###
-    loss_t_eq = result_manager1.results["Loss_t_eq"]
-    loss_t_control = result_manager1.results["Loss_t_control_opt"]
-    iters = result_manager1.results["iters"]
-    ax[0, 0].plot(iters, loss_t_eq, 'k', lw=line_width, label="Baseline")
-    ax[0, 0].plot(iters, loss_t_control, 'C0', lw=line_width, label="Controlled")
-    ax[0, 0].legend(fontsize=fontsize-2)
+    loss_diff = []
+    for i, results in enumerate(result_manager1_list):
+        if i == 0:
+            iters = results.results["iters"]
+        baseline_loss = results.results["Loss_t_eq"]
+        control_loss = results.results["Loss_t_control_opt"]
+        loss_diff.append(baseline_loss - control_loss)
+
+    mean_loss_diff = np.mean(np.stack(loss_diff, axis=0), axis=0)
+    std_loss_diff = np.std(np.stack(loss_diff, axis=0), axis=0)
+
+    ax[0, 0].plot(iters, mean_loss_diff, 'C0', lw=line_width, label="Controlled")
+    ax[0, 0].fill_between(iters, mean_loss_diff - 2*std_loss_diff,
+                          mean_loss_diff + 2*std_loss_diff,
+                          color='C0', alpha=0.3)
+
+    #ax[0, 0].legend(fontsize=fontsize-2)
     # ax[0, 0].set_xlabel("Task time", fontsize=fontsize)
     ax[0, 0].tick_params(axis='both', which='major', labelsize=fontsize - 2)
-    ax[0, 0].set_ylabel(r"$\mathcal{L}(t)$", fontsize=fontsize)
+    ax[0, 0].set_ylabel(r"$\mathcal{L}_{B}(t)-\mathcal{L}_{C}(t)$", fontsize=fontsize)
     ax[0, 0].set_title("Semantic", fontsize=fontsize)
 
-    loss_t_eq = result_manager2.results["Loss_t_eq"]
-    loss_t_control = result_manager2.results["Loss_t_control_opt"]
-    iters = result_manager2.results["iters"]
-    ax[0, 1].plot(iters, loss_t_eq, 'k', lw=line_width, label="Baseline")
-    ax[0, 1].plot(iters, loss_t_control, 'C0', lw=line_width, label="Controlled")
-    # ax[0, 1].legend(fontsize=fontsize-2)
+    loss_diff = []
+    for i, results in enumerate(result_manager2_list):
+        if i == 0:
+            iters = results.results["iters"]
+        baseline_loss = results.results["Loss_t_eq"]
+        control_loss = results.results["Loss_t_control_opt"]
+        loss_diff.append(baseline_loss - control_loss)
+
+    mean_loss_diff = np.mean(np.stack(loss_diff, axis=0), axis=0)
+    std_loss_diff = np.std(np.stack(loss_diff, axis=0), axis=0)
+
+    ax[0, 1].plot(iters, mean_loss_diff, 'C0', lw=line_width, label="Controlled")
+    ax[0, 1].fill_between(iters, mean_loss_diff - 2 * std_loss_diff,
+                          mean_loss_diff + 2 * std_loss_diff,
+                          color='C0', alpha=0.3)
     ax[0, 1].tick_params(axis='both', which='major', labelsize=fontsize - 2)
-    ax[0, 1].set_ylabel(r"$\mathcal{L}(t)$", fontsize=fontsize)
+    # ax[0, 1].set_ylabel(r"$\mathcal{L}_{B}(t)-\mathcal{L}_{C}(t)$", fontsize=fontsize)
     ax[0, 1].set_title("MNIST", fontsize=fontsize)
+    ax[0, 1].set_xlim([0, 7000])
 
     ### NUS PLOT WITH TREE ###
+    result_manager1 = result_manager1_list[0]
+    result_manager2 = result_manager2_list[0]
     _, nus = result_manager1.results["nus"]
     iters = result_manager1.results["iters"]
     nus = nus.detach().cpu().numpy()
@@ -400,8 +423,106 @@ def cat_assimilation_plot(result_manager1, result_manager2, **plot_kwargs):
     ax[1, 1].legend()
     ax[1, 1].set_xlabel("Task time", fontsize=fontsize)
     ax[1, 1].tick_params(axis='both', which='major', labelsize=fontsize - 2)
+    ax[1, 1].set_xlim([0, 7000])
+    ax[1, 1].set_ylim([0, 0.002])
 
     # ax[1, 1].set_ylabel("\nu_{2}^{b}", fontsize=fontsize)
+
+
+def task_engagement_plot(result_manager1_list, result_manager2_list, **plot_kwargs):
+    fontsize = plot_kwargs["fontsize"]
+    figsize = plot_kwargs["figsize"]
+    line_width = plot_kwargs["line_width"]
+    x_lim = None
+    if "x_lim" in plot_kwargs.keys():
+        x_lim = plot_kwargs["x_lim"]
+
+    f, ax = plt.subplots(2, 2, figsize=figsize)
+
+    ### LOSS PLOT
+    baseline_losses = []
+    control_losses = []
+    for i, results in enumerate(result_manager1_list):
+        if i == 0:
+            iters = results.results["iters"]
+        baseline_losses.append(results.results["Loss_t_eq"])
+        control_losses.append(results.results["Loss_t_control_opt"])
+
+    mean_baseline_losses = np.mean(np.stack(baseline_losses, axis=0), axis=0)
+    mean_control_losses = np.mean(np.stack(control_losses, axis=0), axis=0)
+    std_baseline_losses = np.std(np.stack(baseline_losses, axis=0), axis=0)
+    std_control_losses = np.std(np.stack(control_losses, axis=0), axis=0)
+
+    ax[0, 0].plot(iters, mean_baseline_losses, 'k', lw=line_width, label="Baseline")
+    ax[0, 0].plot(iters, mean_control_losses, 'C0', lw=line_width, label="Controlled")
+    ax[0, 0].fill_between(iters, mean_baseline_losses - 2*std_baseline_losses, mean_baseline_losses + 2*std_baseline_losses,
+                    color='k', alpha=0.3)
+    ax[0, 0].fill_between(iters, mean_control_losses - 2*std_control_losses, mean_control_losses + 2*std_control_losses,
+                    color='C0', alpha=0.3)
+
+    ax[0, 0].set_ylabel(r"$\mathcal{L}(t)$", fontsize=fontsize)
+    ax[0, 0].tick_params(axis='both', which='major', labelsize=fontsize-2)
+    ax[0, 0].set_title("Active Engagement")
+    ax[0, 0].legend(fontsize=fontsize - 2)
+
+    baseline_losses = []
+    control_losses = []
+    for i, results in enumerate(result_manager2_list):
+        if i == 0:
+            iters = results.results["iters"]
+        baseline_losses.append(results.results["Loss_t_eq"])
+        control_losses.append(results.results["Loss_t_control_opt"])
+
+    mean_baseline_losses = np.mean(np.stack(baseline_losses, axis=0), axis=0)
+    mean_control_losses = np.mean(np.stack(control_losses, axis=0), axis=0)
+    std_baseline_losses = np.std(np.stack(baseline_losses, axis=0), axis=0)
+    std_control_losses = np.std(np.stack(control_losses, axis=0), axis=0)
+
+    ax[0, 1].plot(iters, mean_baseline_losses, 'k', lw=line_width, label="Baseline")
+    ax[0, 1].plot(iters, mean_control_losses, 'C0', lw=line_width, label="Controlled")
+    ax[0, 1].fill_between(iters, mean_baseline_losses - 2*std_baseline_losses, mean_baseline_losses + 2*std_baseline_losses,
+                    color='k', alpha=0.3)
+    ax[0, 1].fill_between(iters, mean_control_losses - 2*std_control_losses, mean_control_losses + 2*std_control_losses,
+                    color='C0', alpha=0.3)
+
+    ax[0, 1].set_ylabel(r"$\mathcal{L}(t)$", fontsize=fontsize)
+    ax[0, 1].tick_params(axis='both', which='major', labelsize=fontsize-2)
+    ax[0, 1].set_title("Attentive Engagement")
+
+    ### Engagement plot ###
+    phis = []
+    for i, results in enumerate(result_manager1_list):
+        if i == 0:
+            iters = results.results["iters"]
+        phis.append(results.results["final_engagement_coef"].detach().cpu().numpy())
+    mean_phis = np.mean(np.stack(phis, axis=0), axis=0)
+    std_phis = np.std(np.stack(phis, axis=0), axis=0)
+    colors = ["C"+str(i) for i in range(mean_phis.shape[-1])]
+    for i in range(mean_phis.shape[-1]):
+        mean_phi = mean_phis[:, i]
+        std_phi = std_phis[:, i]
+        color = colors[i]
+        ax[1, 0].fill_between(iters, mean_phi - 2 * std_phi,
+                              mean_phi + 2 * std_phi,
+                              color=color, alpha=0.2)
+        ax[1, 0].plot(iters, mean_phi, color, lw=line_width)
+
+    phis = []
+    for i, results in enumerate(result_manager2_list):
+        if i == 0:
+            iters = results.results["iters"]
+        phis.append(results.results["final_engagement_coef"].detach().cpu().numpy())
+    mean_phis = np.mean(np.stack(phis, axis=0), axis=0)
+    std_phis = np.std(np.stack(phis, axis=0), axis=0)
+    colors = ["C"+str(i) for i in range(mean_phis.shape[-1])]
+    for i in range(mean_phis.shape[-1]):
+        mean_phi = mean_phis[:, i]
+        std_phi = std_phis[:, i]
+        color = colors[i]
+        ax[1, 1].fill_between(iters, mean_phi - 2 * std_phi,
+                              mean_phi + 2 * std_phi,
+                              color=color, alpha=0.2)
+        ax[1, 1].plot(iters, mean_phi, color, lw=line_width)
 
 
 def compute_control_cost(G1_t, G2_t, cost_coef):
