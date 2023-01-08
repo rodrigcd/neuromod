@@ -63,7 +63,7 @@ def main(argv):
         n_steps = 10000
 
     # MNIST
-    elif args["dataset"] == "MNIST":
+    elif args["dataset"] == "MNIST-3":
         dataset_params1 = {"batch_size": 256,
                            "new_shape": (5, 5),
                            "subset": (0, 1)}
