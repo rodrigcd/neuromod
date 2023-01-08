@@ -8,7 +8,7 @@ from bokeh.io import output_notebook
 from bokeh.palettes import Viridis, Category10, Category20
 from bokeh.io import export_svg
 
-import metamod.utils
+plt.rcParams['text.usetex'] = True
 
 
 def plot_weight_ev(flat_W_t, flat_W_t_set2, iters, iters_set2, title="W", legend=("Simulation", "Equation")):
@@ -117,9 +117,9 @@ def single_task_plot(manager_list, ax=None, **plot_kwargs):
         ax[plot_index].set_xlabel("Task time", fontsize=fontsize)
     ax[plot_index].set_xlim(x_lim)
     if label_in_title:
-        ax[plot_index].set_title("$\mathcal{L}(t)$", fontsize=fontsize)
+        ax[plot_index].set_title(r"$\mathcal{L}(t)$", fontsize=fontsize)
     else:
-        ax[plot_index].set_ylabel("$\mathcal{L}(t)$", fontsize=fontsize)
+        ax[plot_index].set_ylabel(r"$\mathcal{L}(t)$", fontsize=fontsize)
     ax[plot_index].tick_params(axis='both', which='major', labelsize=fontsize-2)
     # ax[plot_index].legend(fontsize=fontsize - 2)
 
@@ -160,9 +160,9 @@ def single_task_plot(manager_list, ax=None, **plot_kwargs):
     if not skip_xlabel:
         ax[plot_index].set_xlabel("Task time", fontsize=fontsize)
     if label_in_title:
-        ax[plot_index].set_title("$v(t) = -\eta \mathcal{L}(t) - C(G(t))$", fontsize=fontsize)
+        ax[plot_index].set_title(r"$v(t) = -\eta \mathcal{L}(t) - C(G(t))$", fontsize=fontsize)
     else:
-        ax[plot_index].set_ylabel("$v(t) = -\eta \mathcal{L}(t) - C(G(t))$", fontsize=fontsize)
+        ax[plot_index].set_ylabel(r"$v(t) = -\eta \mathcal{L}(t) - C(G(t))$", fontsize=fontsize)
     ax[plot_index].tick_params(axis='both', which='major', labelsize=fontsize-2)
     # ax[plot_index].text(.01, .99, '(a)', ha='left', va='top', transform=ax[plot_index].transAxes)
 
@@ -190,10 +190,10 @@ def single_task_plot(manager_list, ax=None, **plot_kwargs):
     baseline_l2 = np.mean(np.stack(baseline_l2, axis=0), axis=0)
     control_l1 = np.mean(np.stack(control_l1, axis=0), axis=0)
     control_l2 = np.mean(np.stack(control_l2, axis=0), axis=0)
-    ax[plot_index].plot(iters, baseline_l1, 'k', lw=line_width, label="Base $L1$")
-    ax[plot_index].plot(iters, control_l1, 'C0', lw=line_width, label="Ctrl $L1$")
-    ax[plot_index].plot(iters, baseline_l2, 'k--', lw=line_width, label="Base $L2$")
-    ax[plot_index].plot(iters, control_l2, 'C0--', lw=line_width, label="Ctrl $L2$")
+    ax[plot_index].plot(iters, baseline_l1, 'k', lw=line_width, label=r"Base $L1$")
+    ax[plot_index].plot(iters, control_l1, 'C0', lw=line_width, label=r"Ctrl $L1$")
+    ax[plot_index].plot(iters, baseline_l2, 'k--', lw=line_width, label=r"Base $L2$")
+    ax[plot_index].plot(iters, control_l2, 'C0--', lw=line_width, label=r"Ctrl $L2$")
     ax[plot_index].set_xlim(x_lim)
     ax[plot_index].legend(fontsize=fontsize-2)
     ax[plot_index].set_xlabel("Task time", fontsize=fontsize)
@@ -239,10 +239,10 @@ def single_task_plot(manager_list, ax=None, **plot_kwargs):
         ctrl_loss_der = -ctrl_loss_der / np.max(np.abs(ctrl_loss_der))
         G1_size = G1_size / np.max(np.abs(G1_size))
         G2_size = G2_size / np.max(np.abs(G2_size))
-    ax[plot_index].plot(iters, base_loss_der, 'k', lw=line_width, label="Base $d\mathcal{L}/dt$")
-    ax[plot_index].plot(iters, ctrl_loss_der, 'C0', lw=line_width, label="Ctrl $d\mathcal{L}/dt$")
-    ax[plot_index].plot(iters, G1_size, 'C2--', lw=line_width-1, label="$G_1(t)$ size")
-    ax[plot_index].plot(iters, G2_size, 'C3--', lw=line_width-1, label="$G_2(t)$ size")
+    ax[plot_index].plot(iters, base_loss_der, 'k', lw=line_width, label=r"Base $d\mathcal{L}/dt$")
+    ax[plot_index].plot(iters, ctrl_loss_der, 'C0', lw=line_width, label=r"Ctrl $d\mathcal{L}/dt$")
+    ax[plot_index].plot(iters, G1_size, 'C2--', lw=line_width-1, label=r"$G_1(t)$ size")
+    ax[plot_index].plot(iters, G2_size, 'C3--', lw=line_width-1, label=r"$G_2(t)$ size")
     ax[plot_index].set_xlim(x_lim)
     ax[plot_index].legend(fontsize=fontsize-2)
     ax[plot_index].set_xlabel("Task time", fontsize=fontsize)
@@ -332,6 +332,78 @@ def task_switch_plot(result_manager, **plot_kwargs):
     ax1.set_ylabel("Values at switch time", fontsize=fontsize)
 
 
+def cat_assimilation_plot(result_manager1, result_manager2, **plot_kwargs):
+    fontsize = plot_kwargs["fontsize"]
+    figsize = plot_kwargs["figsize"]
+    line_width = plot_kwargs["line_width"]
+    x_lim = None
+    if "x_lim" in plot_kwargs.keys():
+        x_lim = plot_kwargs["x_lim"]
+
+    f, ax = plt.subplots(2, 2, figsize=figsize)
+
+    ### LOSS PLOT ###
+    loss_t_eq = result_manager1.results["Loss_t_eq"]
+    loss_t_control = result_manager1.results["Loss_t_control_opt"]
+    iters = result_manager1.results["iters"]
+    ax[0, 0].plot(iters, loss_t_eq, 'k', lw=line_width, label="Baseline")
+    ax[0, 0].plot(iters, loss_t_control, 'C0', lw=line_width, label="Controlled")
+    ax[0, 0].legend(fontsize=fontsize-2)
+    # ax[0, 0].set_xlabel("Task time", fontsize=fontsize)
+    ax[0, 0].tick_params(axis='both', which='major', labelsize=fontsize - 2)
+    ax[0, 0].set_ylabel(r"$\mathcal{L}(t)$", fontsize=fontsize)
+    ax[0, 0].set_title("Semantic", fontsize=fontsize)
+
+    loss_t_eq = result_manager2.results["Loss_t_eq"]
+    loss_t_control = result_manager2.results["Loss_t_control_opt"]
+    iters = result_manager2.results["iters"]
+    ax[0, 1].plot(iters, loss_t_eq, 'k', lw=line_width, label="Baseline")
+    ax[0, 1].plot(iters, loss_t_control, 'C0', lw=line_width, label="Controlled")
+    # ax[0, 1].legend(fontsize=fontsize-2)
+    ax[0, 1].tick_params(axis='both', which='major', labelsize=fontsize - 2)
+    ax[0, 1].set_ylabel(r"$\mathcal{L}(t)$", fontsize=fontsize)
+    ax[0, 1].set_title("MNIST", fontsize=fontsize)
+
+    ### NUS PLOT WITH TREE ###
+    _, nus = result_manager1.results["nus"]
+    iters = result_manager1.results["iters"]
+    nus = nus.detach().cpu().numpy()
+    n_levels = result_manager1.params["dataset_params"]["dataset"].h_level
+    leaves_per_level = 2**(np.arange(n_levels))
+    level_colors = ["C" + str(i) for i in range(n_levels)]
+    level_per_curve = []
+    current_level = 0
+    for n_leaves in leaves_per_level:
+        for i in range(n_leaves):
+            level_per_curve.append(current_level)
+        current_level += 1
+    for i in range(nus.shape[-1]):
+        ax[1, 0].plot(iters, nus[:, 0, 0, i], lw=line_width, color=level_colors[level_per_curve[i]])
+    ax[1, 0].set_xlabel("Task time", fontsize=fontsize)
+    ax[1, 0].set_ylabel(r"$\nu_2^b(t)$", fontsize=fontsize)
+    ax[1, 0].tick_params(axis='both', which='major', labelsize=fontsize - 2)
+
+    # Drawing hierarchy tree
+    root_point = (6000, 0.11)
+    height = 0.05
+    width = 4000
+    marker_size = 100
+    draw_tree(ax[1, 0], n_levels, level_colors, root_point, height=height,
+              width=width, marker_size=marker_size, line_width=line_width)
+
+    ### MNIST NUS PLOT ###
+    _, nus = result_manager2.results["nus"]
+    iters = result_manager2.results["iters"]
+    nus = nus.detach().cpu().numpy()
+    for i in range(nus.shape[-1])[:10]:
+        ax[1, 1].plot(iters, nus[:, 0, 0, i], lw=line_width, label="Digit "+str(i))
+    ax[1, 1].legend()
+    ax[1, 1].set_xlabel("Task time", fontsize=fontsize)
+    ax[1, 1].tick_params(axis='both', which='major', labelsize=fontsize - 2)
+
+    # ax[1, 1].set_ylabel("\nu_{2}^{b}", fontsize=fontsize)
+
+
 def compute_control_cost(G1_t, G2_t, cost_coef):
     control_cost = np.exp(cost_coef * (np.sum(G1_t ** 2, axis=(-1, -2)) + np.sum(G2_t ** 2, axis=(-1, -2)))) - 1
     return control_cost
@@ -351,4 +423,30 @@ def compute_all_weight_sparsity(w_list):
     return W_norm1, W_norm2
 
 
+def draw_tree(ax, n_levels, level_colors, root_point, height=3.0, width=3.0, marker_size=500, line_width=3):
+    height_per_level = height / (n_levels - 1)
+    width_per_level = width / (2 ** (np.arange(n_levels) + 1))
+    leafs_per_level = 2 ** np.arange(n_levels)
+    level_points = {}
+
+    for level in range(n_levels):
+        if level == 0:
+            ax.scatter(root_point[0], root_point[1], c=level_colors[level], s=marker_size, zorder=2)
+            level_points[level] = [root_point, ]
+        else:
+            level_width = width_per_level[level]
+            new_y = level_points[level - 1][0][1] - height_per_level
+            this_level_points = []
+            for pre_point in level_points[level - 1]:
+                left_point = (pre_point[0] - level_width, new_y)
+                right_point = (pre_point[0] + level_width, new_y)
+                this_level_points.append(left_point)
+                this_level_points.append(right_point)
+                ax.plot([left_point[0], pre_point[0]], [left_point[1], pre_point[1]], color="k", lw=line_width,
+                        zorder=0)
+                ax.plot([right_point[0], pre_point[0]], [right_point[1], pre_point[1]], color="k", lw=line_width,
+                        zorder=0)
+                ax.scatter(left_point[0], left_point[1], s=marker_size, c=level_colors[level], zorder=2)
+                ax.scatter(right_point[0], right_point[1], s=marker_size, c=level_colors[level], zorder=2)
+            level_points[level] = this_level_points
 

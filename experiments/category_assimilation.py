@@ -26,10 +26,10 @@ def main(argv):
     args = parser.parse_args(argv)
     args = vars(args)
 
-    #if args["run_id"] % 2 == 0:
-    #    args["dataset"] = "Semantic"
-    #else:
-    args["dataset"] = "MNIST"
+    if args["run_id"] % 2 == 0:
+        args["dataset"] = "Semantic"
+    else:
+        args["dataset"] = "MNIST"
     run_name = args["run_name"] + "_" + args["dataset"]
     results_path = args["save_path"]
     save_weights_every = 20

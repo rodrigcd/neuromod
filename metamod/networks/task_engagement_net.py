@@ -16,14 +16,19 @@ class LinearTaskEngNet(LinearNet):
             y_pred = self.forward(x)
         else:
             y_pred = self.controlled_forward(x, g1_tilda=g1_tilda, g2_tilda=g2_tilda)
+
+        if g1_tilda is None:
+            y_pred = self.forward(x)
+        else:
+            y_pred = self.controlled_forward(x, g1_tilda=g1_tilda, g2_tilda=g2_tilda)
+        y_target = torch.from_numpy(y.T).to(self.device)
+        loss1 = torch.sum((y_pred - y_target)**2)/(2.0*y.shape[0])
+        loss2 = (self.reg_coef/2.0)*(torch.sum(self.W1**2) + torch.sum(self.W2**2))
+        real_loss = loss1 + loss2
+
         if engagement_coef is None:
-            y_target = torch.from_numpy(y.T).to(self.device)
-            loss1 = torch.sum((y_pred - y_target)**2)/(2.0*y.shape[0])
-            loss2 = (self.reg_coef / 2.0) * (torch.sum(self.W1 ** 2) + torch.sum(self.W2 ** 2))
-            loss = loss1 + loss2
-            loss.backward()
+            real_loss.backward()
             self.update_rule()
-            return loss
         else:
             loss_per_task = torch.zeros(size=(len(engagement_coef),)).to(self.device)
             for i, phi in enumerate(engagement_coef):
@@ -38,4 +43,5 @@ class LinearTaskEngNet(LinearNet):
             loss = torch.sum(loss_per_task, dim=0) + loss2
             loss.backward()
             self.update_rule()
-            return loss
+
+        return real_loss

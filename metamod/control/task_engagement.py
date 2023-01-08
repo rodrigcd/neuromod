@@ -98,32 +98,32 @@ class LinearNetTaskEngEq(LinearNetEq):
         padded_W = padding_function(to_pad_W)
         return padded_W
 
-    def get_loss_function(self, W1, W2, get_numpy=False):
-        # Here the weights have shape (t, weight_shape[0], weight_shape[1])
-        if isinstance(W1, np.ndarray):
-            W2 = torch.from_numpy(W2).type(self.dtype).to(self.device)
-            W1 = torch.from_numpy(W1).type(self.dtype).to(self.device)
-
-        tasks_loss = 0
-        for i in range(self.n_tasks):
-            task_index = self.task_output_index[i]
-            padded_W2 = self.get_padded_weight(W2, task_index)
-
-            W_t = padded_W2 @ W1
-            task_out_cov_i = torch.from_numpy(self.tasks_out_cov[i]).requires_grad_(False).type(self.dtype).to(self.device)
-            sigma_xyi = self.in_out_cov_pertask[i]
-
-            tasks_loss += self.engagement_coef[:, i]*0.5*(torch.trace(task_out_cov_i)
-                               - torch.diagonal(2*sigma_xyi @ W_t, dim1=-2, dim2=-1).sum(-1)
-                               + torch.diagonal(self.in_cov @ torch.transpose(W_t, dim0=-1, dim1=-2) @ W_t,
-                                                dim1=-2, dim2=-1).sum(-1)) + 0.5*W_t.shape[1]*self.intrinsic_noise**2
-
-        L2 = (self.reg_coef/2.0)*(torch.sum(W1**2, (-1, -2)) + torch.sum(W2**2, (-1, -2)))
-        L = tasks_loss + L2
-        if get_numpy:
-            return L.detach().cpu().numpy()
-        else:
-            return L
+    # def get_loss_function(self, W1, W2, get_numpy=False):
+    #     # Here the weights have shape (t, weight_shape[0], weight_shape[1])
+    #     if isinstance(W1, np.ndarray):
+    #         W2 = torch.from_numpy(W2).type(self.dtype).to(self.device)
+    #         W1 = torch.from_numpy(W1).type(self.dtype).to(self.device)
+    #
+    #     tasks_loss = 0
+    #     for i in range(self.n_tasks):
+    #         task_index = self.task_output_index[i]
+    #         padded_W2 = self.get_padded_weight(W2, task_index)
+    #
+    #         W_t = padded_W2 @ W1
+    #         task_out_cov_i = torch.from_numpy(self.tasks_out_cov[i]).requires_grad_(False).type(self.dtype).to(self.device)
+    #         sigma_xyi = self.in_out_cov_pertask[i]
+    #
+    #         tasks_loss += self.engagement_coef[:, i]*0.5*(torch.trace(task_out_cov_i)
+    #                            - torch.diagonal(2*sigma_xyi @ W_t, dim1=-2, dim2=-1).sum(-1)
+    #                            + torch.diagonal(self.in_cov @ torch.transpose(W_t, dim0=-1, dim1=-2) @ W_t,
+    #                                             dim1=-2, dim2=-1).sum(-1)) + 0.5*W_t.shape[1]*self.intrinsic_noise**2
+    #
+    #     L2 = (self.reg_coef/2.0)*(torch.sum(W1**2, (-1, -2)) + torch.sum(W2**2, (-1, -2)))
+    #     L = tasks_loss + L2
+    #     if get_numpy:
+    #         return L.detach().cpu().numpy()
+    #     else:
+    #         return L
 
 
 class LinearNetTaskEngControl(LinearNetTaskEngEq):
@@ -132,7 +132,7 @@ class LinearNetTaskEngControl(LinearNetTaskEngEq):
                  intrinsic_noise, learning_rate=1e-5, n_steps=10000, time_constant=1.0,
                  task_output_index=(), task_input_index=(), engagement_coef=None,
                  control_lower_bound=0.0, control_upper_bound=0.5, init_g=None, gamma=0.99, cost_coef=0.3,
-                 reward_convertion=1.0, control_lr=1e-4):
+                 reward_convertion=1.0, control_lr=1e-4, type_of_engage="active"):
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.dtype = torch.float32
@@ -147,6 +147,8 @@ class LinearNetTaskEngControl(LinearNetTaskEngEq):
         self.cost_coef = cost_coef
         self.reward_convertion = reward_convertion
         self.control_lr = control_lr
+        self.type_of_engage = type_of_engage
+        self.cost_offset = 0 if type_of_engage == "active" else 1
 
         self.input_dim = self.W1.shape[1]
         self.hidden_dim = self.W1.shape[0]
@@ -166,7 +168,7 @@ class LinearNetTaskEngControl(LinearNetTaskEngEq):
             self.engagement_coef.data.clamp_(max=self.control_upper_bound)
 
     def control_cost(self, get_numpy=False):
-        cost = self.cost_coef*torch.sum(self.engagement_coef ** 2, dim=-1)
+        cost = self.cost_coef*torch.sum((self.engagement_coef + self.cost_offset) ** 2, dim=-1)
         if get_numpy:
             return cost.detach().cpu().numpy()
         else:
@@ -198,7 +200,7 @@ class LinearNetTaskEngControl(LinearNetTaskEngEq):
         cumulated_R = torch.sum(instant_reward_rate)*self.dt
 
         cumulated_R.backward()
-        self.engagement_coef = self._update_nus(eng_coef=self.engagement_coef, lr=lr)
+        self.engagement_coef = self._update_phis(eng_coef=self.engagement_coef, lr=lr)
         self._bound_control()
 
         if get_numpy:
@@ -206,7 +208,7 @@ class LinearNetTaskEngControl(LinearNetTaskEngEq):
         else:
             return cumulated_R
 
-    def _update_nus(self, eng_coef, lr):
+    def _update_phis(self, eng_coef, lr):
         with torch.no_grad():
             eng_coef += lr*eng_coef.grad
             eng_coef.grad = None

@@ -132,7 +132,7 @@ if __name__ == "__main__":
     batch_size = 34
     new_shape = (10, 10)
     subset = (0, 1, 2, 3)
-    data = MNIST(batch_size=batch_size, subsets=subset, new_shape=new_shape)
+    data = MNIST(batch_size=batch_size, subset=subset, new_shape=new_shape)
     batch_x, batch_y = data.sample_batch()
     print(batch_x.shape, batch_y.shape)
 
