@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-#SBATCH --job-name=cat_main
-#SBATCH --output=logs/out_category_assimilation.log
-#SBATCH --error=logs/err_category_assimilation.log
+#SBATCH --job-name=eng_task
+#SBATCH --output=logs/out_task_eng.log
+#SBATCH --error=logs/err_task_eng.log
 #SBATCH -p gpu
 #SBATCH -N 1
 #SBATCH --mem=6G
