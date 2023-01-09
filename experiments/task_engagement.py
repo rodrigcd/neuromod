@@ -94,8 +94,8 @@ def main(argv):
         control_lower_bound = 0.0
         control_upper_bound = 1.0
     else:  # Attention
-        control_lower_bound = -0.5
-        control_upper_bound = 0.5
+        control_lower_bound = 0.0
+        control_upper_bound = 2.0
     control_params = {"control_lower_bound": control_lower_bound,
                       "control_upper_bound": control_upper_bound,
                       "gamma": 0.99,

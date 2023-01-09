@@ -168,7 +168,7 @@ class LinearNetTaskEngControl(LinearNetTaskEngEq):
             self.engagement_coef.data.clamp_(max=self.control_upper_bound)
 
     def control_cost(self, get_numpy=False):
-        cost = self.cost_coef*torch.sum((self.engagement_coef + self.cost_offset) ** 2, dim=-1)
+        cost = self.cost_coef*torch.sum((self.engagement_coef - self.cost_offset) ** 2, dim=-1)
         if get_numpy:
             return cost.detach().cpu().numpy()
         else:
