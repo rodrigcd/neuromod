@@ -59,7 +59,7 @@ def main(argv):
                         "W1_0": None,
                         "W2_0": None}
         control_lr = 1.0
-        iter_control = 700
+        iter_control = 800
         n_steps = 10000
 
     # MNIST
@@ -83,7 +83,7 @@ def main(argv):
                         "W1_0": None,
                         "W2_0": None}
         control_lr = 1.0
-        iter_control = 700
+        iter_control = 800
         n_steps = 13000
 
     else:
