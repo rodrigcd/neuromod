@@ -462,7 +462,7 @@ def task_engagement_plot(result_manager1_list, result_manager2_list, **plot_kwar
 
     ax[0, 0].set_ylabel(r"$\mathcal{L}(t)$", fontsize=fontsize)
     ax[0, 0].tick_params(axis='both', which='major', labelsize=fontsize-2)
-    ax[0, 0].set_title("Active Engagement")
+    ax[0, 0].set_title("Active Engagement", fontsize=fontsize)
     ax[0, 0].legend(fontsize=fontsize - 2)
 
     baseline_losses = []
@@ -484,10 +484,8 @@ def task_engagement_plot(result_manager1_list, result_manager2_list, **plot_kwar
                     color='k', alpha=0.3)
     ax[0, 1].fill_between(iters, mean_control_losses - 2*std_control_losses, mean_control_losses + 2*std_control_losses,
                     color='C0', alpha=0.3)
-
-    ax[0, 1].set_ylabel(r"$\mathcal{L}(t)$", fontsize=fontsize)
     ax[0, 1].tick_params(axis='both', which='major', labelsize=fontsize-2)
-    ax[0, 1].set_title("Attentive Engagement")
+    ax[0, 1].set_title("Attentive Engagement", fontsize=fontsize)
 
     ### Engagement plot ###
     phis = []
@@ -502,10 +500,15 @@ def task_engagement_plot(result_manager1_list, result_manager2_list, **plot_kwar
         mean_phi = mean_phis[:, i]
         std_phi = std_phis[:, i]
         color = colors[i]
+        legend = "Digits: " + str(result_manager1_list[0].params["dataset_params"]["dataset_list_params"][i]["subset"])
         ax[1, 0].fill_between(iters, mean_phi - 2 * std_phi,
                               mean_phi + 2 * std_phi,
                               color=color, alpha=0.2)
-        ax[1, 0].plot(iters, mean_phi, color, lw=line_width)
+        ax[1, 0].plot(iters, mean_phi, color, lw=line_width, label=legend)
+    ax[1, 0].set_ylabel(r"$\psi_{\tau}(t)$", fontsize=fontsize)
+    ax[1, 0].tick_params(axis='both', which='major', labelsize=fontsize-2)
+    ax[1, 0].set_xlabel("Task time", fontsize=fontsize)
+    ax[1, 0].legend(fontsize=fontsize - 2)
 
     phis = []
     for i, results in enumerate(result_manager2_list):
@@ -523,7 +526,8 @@ def task_engagement_plot(result_manager1_list, result_manager2_list, **plot_kwar
                               mean_phi + 2 * std_phi,
                               color=color, alpha=0.2)
         ax[1, 1].plot(iters, mean_phi, color, lw=line_width)
-
+    ax[1, 1].tick_params(axis='both', which='major', labelsize=fontsize-2)
+    ax[1, 1].set_xlabel("Task time", fontsize=fontsize)
 
 def compute_control_cost(G1_t, G2_t, cost_coef):
     control_cost = np.exp(cost_coef * (np.sum(G1_t ** 2, axis=(-1, -2)) + np.sum(G2_t ** 2, axis=(-1, -2)))) - 1
