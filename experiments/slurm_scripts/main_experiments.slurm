@@ -6,7 +6,7 @@
 #SBATCH -p gpu
 #SBATCH -N 1
 #SBATCH --mem=3G
-#SBATCH --time=0-24:00
+#SBATCH --time=0-2:00
 #SBATCH --gres=gpu:1  # this is important to use GPUs
 #SBATCH --array=0-140
 
