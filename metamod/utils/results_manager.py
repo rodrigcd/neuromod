@@ -3,6 +3,7 @@ from bokeh.plotting import figure, show, output_file, save
 from bokeh.palettes import Viridis, Category10, Category20
 from bokeh.layouts import gridplot
 from bokeh.io import output_notebook
+import glob
 output_notebook()
 
 from metamod.utils import plot_lines, plot_weight_ev, load_results, plot_control, plot_net_reward
@@ -178,3 +179,72 @@ class SingleLayerManager(object):
             print(", ".join(mssg))
         print("### Results Keys ###")
         print(self.results.keys())
+
+
+def load_single_layer_vars():
+    variations = ["n_steps", "reg_coef", "betas", "sigmas", "gamma"]
+
+    results_per_var = {}
+    for key in variations:
+        results_per_var[key] = []
+
+    for i in range(141):
+        data, label, ranges = load_results_by_id(run_id=i)
+        if data is None:
+            continue
+        results_per_var[label].append(data)
+
+    return results_per_var, ranges
+
+
+def load_results_by_id(run_id):
+    n_params = 30
+    gammas = 10 ** (np.linspace(-8, 0, n_params, endpoint=True))
+    sigmas = np.linspace(1e-5, 5, n_params, endpoint=True)
+    betas = np.linspace(1e-5, 2, n_params, endpoint=True)
+    reg_coef_values = np.linspace(0, 5, n_params, endpoint=True)
+    available_times = [200 + i * 50 for i in range(21)]
+
+    ranges = {"gammas": gammas, "sigmas": sigmas, "betas": betas, "reg_coef_values": reg_coef_values,
+              "available_times": available_times}
+
+    # print("n_runs", n_params*4 + len(available_times))
+
+    run_vales = {"gamma": 0.99,
+                 "sigmas": 1.0,
+                 "betas": 0.3,
+                 "reg_coef": 0.1,
+                 "n_steps": 600}
+
+    if n_params * 0 <= run_id < n_params * 1:
+        param_id = run_id - n_params * 0
+        run_vales["gamma"] = gammas[param_id]
+        # print("using gamma", run_vales["gamma"])
+        label = "gamma"
+    elif n_params * 1 <= run_id < n_params * 2:
+        param_id = run_id - n_params * 1
+        run_vales["sigmas"] = sigmas[param_id]
+        # print("using sigmas", run_vales["sigmas"])
+        label = "sigmas"
+    elif n_params * 2 <= run_id < n_params * 3:
+        param_id = run_id - n_params * 2
+        run_vales["betas"] = betas[param_id]
+        # print("using betas", run_vales["betas"])
+        label = "betas"
+    elif n_params * 3 <= run_id < n_params * 4:
+        param_id = run_id - n_params * 3
+        run_vales["reg_coef"] = reg_coef_values[param_id]
+        # print("using reg_coef", run_vales["reg_coef"])
+        label = "reg_coef"
+    elif n_params * 4 <= run_id < n_params * 5:
+        param_id = run_id - n_params * 4
+        run_vales["n_steps"] = available_times[param_id]
+        # print("using n_steps", run_vales["n_steps"])
+        label = "n_steps"
+
+    results_dir = glob.glob("../results/single_neuron/single_neuron_id_" + str(run_id) + "_*")
+    if len(results_dir) == 0:
+        return None, None
+    result = SingleLayerManager(results_dir[0])
+
+    return {"data": result, "run_vals": run_vales}, label, ranges

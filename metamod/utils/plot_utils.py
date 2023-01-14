@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import matplotlib.cm as cm
 import numpy as np
 
 from bokeh.plotting import figure, show, output_file, save
@@ -539,6 +540,57 @@ def task_engagement_plot(result_manager1_list, result_manager2_list, **plot_kwar
     ax[1, 1].tick_params(axis='both', which='major', labelsize=fontsize-2)
     ax[1, 1].set_xlabel("Task time", fontsize=fontsize)
     ax[1, 1].set_ylim(ylim2)
+
+
+def single_neuron_param_plot(result_dict, **plot_kwargs):
+    fontsize = plot_kwargs["fontsize"]
+    figsize = plot_kwargs["figsize"]
+    line_width = plot_kwargs["line_width"]
+    selected_vars = plot_kwargs["selected_vars"]
+
+    f, ax = plt.subplots(2, len(selected_vars), figsize=figsize)
+    for i, var_name in enumerate(selected_vars):
+        # CONTROL PLOT
+        iters = result_dict[var_name][0]["data"].results["iters"]
+        control = [data["data"].results["control_signal"] for data in result_dict[var_name]]
+        n_curves = len(control)
+        colors = cm.viridis(np.linspace(0, 1, n_curves))
+        if not isinstance(control, np.ndarray):
+            control = [val.detach().cpu().numpy() for val in control]
+        var_sweep = [data["run_vals"][var_name] for data in result_dict[var_name]]
+        control = np.stack(control, axis=0)
+        var_sweep = np.stack(var_sweep, axis=0)
+        sort_index = np.argsort(var_sweep)
+        control = control[sort_index, ...]
+        var_sweep = var_sweep[sort_index, ...]
+
+        for j in range(n_curves):
+            ax[0, i].plot(iters, control[j, :, 0, 0], c=colors[j])
+
+        # LOSS PLOT
+        iters = result_dict[var_name][0]["data"].results["iters"]
+        loss_eq = [data["data"].results["Loss_t_eq"] for data in result_dict[var_name]]
+        loss_control = [data["data"].results["Loss_t_control_opt"] for data in result_dict[var_name]]
+        n_curves = len(loss_eq)
+        colors = cm.viridis(np.linspace(0, 1, n_curves))
+        #if not isinstance(loss_eq, np.ndarray):
+        #    loss_eq = [val.detach().cpu().numpy() for val in loss_eq]
+        #if not isinstance(loss_control, np.ndarray):
+        #    loss_control = [val.detach().cpu().numpy() for val in loss_control]
+
+        var_sweep = [data["run_vals"][var_name] for data in result_dict[var_name]]
+        loss_eq = np.stack(loss_eq, axis=0)
+        loss_control = np.stack(loss_control, axis=0)
+        var_sweep = np.stack(var_sweep, axis=0)
+        sort_index = np.argsort(var_sweep)
+        loss_eq = loss_eq[sort_index, ...]
+        loss_control = loss_control[sort_index, ...]
+        var_sweep = var_sweep[sort_index, ...]
+
+        for j in range(n_curves):
+            loss_diff = loss_control[j, :] - loss_eq[j, :]
+            ax[1, i].plot(iters, loss_diff, c=colors[j])
+
 
 
 def compute_control_cost(G1_t, G2_t, cost_coef):
