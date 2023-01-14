@@ -9,9 +9,11 @@ from metamod.networks import SingleLayerNet
 from metamod.utils import save_var, get_date_time
 import argparse
 import sys
+from functools import partialmethod
 
 
 def main(argv):
+    tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--run-name', type=str, default="single_neuron")
