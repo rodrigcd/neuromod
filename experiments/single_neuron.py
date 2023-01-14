@@ -86,7 +86,7 @@ def main(argv):
                     "W_0": np.zeros((1, 1))}
 
     control_params = {"control_lower_bound": 0.0,
-                      "control_upper_bound": None,
+                      "control_upper_bound": 0.5,
                       "gamma": run_vales["gamma"],
                       "cost_coef": run_vales["betas"],
                       "reward_convertion": 1.0,

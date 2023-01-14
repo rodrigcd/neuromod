@@ -16,7 +16,7 @@ export XLA_FLAGS=--xla_gpu_cuda_data_dir=/ceph/apps/ubuntu-20/packages/cuda/11.6
 eval "$(conda shell.bash hook)"
 conda activate metamod
 
-# Single neuron experiment
+# Single neuron experiment (Ask for 2 hours)
 bash single_neuron.sh $SLURM_ARRAY_TASK_ID
 
 # Linear network experiment
