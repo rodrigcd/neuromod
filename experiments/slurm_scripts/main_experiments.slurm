@@ -1,20 +1,23 @@
 #!/bin/bash
 #
-#SBATCH --job-name=eng_task
-#SBATCH --output=logs/out_task_eng.log
-#SBATCH --error=logs/err_task_eng.log
+#SBATCH --job-name=s_neuron
+#SBATCH --output=logs/out_sing_neuron.log
+#SBATCH --error=logs/err_sing_neuron.log
 #SBATCH -p gpu
 #SBATCH -N 1
-#SBATCH --mem=6G
+#SBATCH --mem=3G
 #SBATCH --time=0-24:00
 #SBATCH --gres=gpu:1  # this is important to use GPUs
-#SBATCH --array=0-9
+#SBATCH --array=0-140
 
 source /usr/share/modules/init/bash
 module load cuda/11.6
 export XLA_FLAGS=--xla_gpu_cuda_data_dir=/ceph/apps/ubuntu-20/packages/cuda/11.6.2_510.47.03
 eval "$(conda shell.bash hook)"
 conda activate metamod
+
+# Single neuron experiment
+bash single_neuron.sh $SLURM_ARRAY_TASK_ID
 
 # Linear network experiment
 # bash single_task.sh $SLURM_ARRAY_TASK_ID
@@ -26,4 +29,4 @@ conda activate metamod
 #bash cat_assimilation.sh $SLURM_ARRAY_TASK_ID
 
 # Task engagement
-bash task_engagement.sh $SLURM_ARRAY_TASK_ID
+#bash task_engagement.sh $SLURM_ARRAY_TASK_ID
