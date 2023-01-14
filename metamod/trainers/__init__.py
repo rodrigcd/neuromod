@@ -1,1 +1,1 @@
-from .training import two_layer_training, two_layer_engage_training
+from .training import single_layer_training, two_layer_training, two_layer_engage_training

@@ -415,16 +415,25 @@ def cat_assimilation_plot(result_manager1_list, result_manager2_list, **plot_kwa
               width=width, marker_size=marker_size, line_width=line_width)
 
     ### MNIST NUS PLOT ###
-    _, nus = result_manager2.results["nus"]
     iters = result_manager2.results["iters"]
-    nus = nus.detach().cpu().numpy()
+    nus_list = []
+
+    for i, results in enumerate(result_manager2_list):
+        if i == 0:
+            iters = results.results["iters"]
+        _, nus = results.results["nus"]
+        nus_list.append(nus.detach().cpu().numpy())
+
+    mean_nus = np.mean(np.stack(nus_list, axis=0), axis=0)
+    std_nus = np.std(np.stack(nus_list, axis=0), axis=0)
+
     for i in range(nus.shape[-1])[:10]:
-        ax[1, 1].plot(iters, nus[:, 0, 0, i], lw=line_width, label="Digit "+str(i))
+        ax[1, 1].plot(iters, mean_nus[:, 0, 0, i], lw=line_width, label="Digit "+str(i))
     ax[1, 1].legend()
     ax[1, 1].set_xlabel("Task time", fontsize=fontsize)
     ax[1, 1].tick_params(axis='both', which='major', labelsize=fontsize - 2)
     ax[1, 1].set_xlim([0, 7000])
-    ax[1, 1].set_ylim([0, 0.002])
+    ax[1, 1].set_ylim([0, 0.0018])
 
     # ax[1, 1].set_ylabel("\nu_{2}^{b}", fontsize=fontsize)
 
@@ -433,6 +442,7 @@ def task_engagement_plot(result_manager1_list, result_manager2_list, **plot_kwar
     fontsize = plot_kwargs["fontsize"]
     figsize = plot_kwargs["figsize"]
     line_width = plot_kwargs["line_width"]
+    ylim2 = plot_kwargs["ylim2"]
     x_lim = None
     if "x_lim" in plot_kwargs.keys():
         x_lim = plot_kwargs["x_lim"]
@@ -528,6 +538,8 @@ def task_engagement_plot(result_manager1_list, result_manager2_list, **plot_kwar
         ax[1, 1].plot(iters, mean_phi, color, lw=line_width)
     ax[1, 1].tick_params(axis='both', which='major', labelsize=fontsize-2)
     ax[1, 1].set_xlabel("Task time", fontsize=fontsize)
+    ax[1, 1].set_ylim(ylim2)
+
 
 def compute_control_cost(G1_t, G2_t, cost_coef):
     control_cost = np.exp(cost_coef * (np.sum(G1_t ** 2, axis=(-1, -2)) + np.sum(G2_t ** 2, axis=(-1, -2)))) - 1

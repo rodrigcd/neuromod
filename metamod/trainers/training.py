@@ -5,6 +5,28 @@ from metamod.networks import BaseNetwork, LinearTaskEngNet
 import numpy as np
 
 
+def single_layer_training(model: BaseNetwork, dataset: BaseTask, n_steps, control_signal=None, save_weights_every=100):
+
+    loss = []
+    iters = np.arange(n_steps)
+    weights = []
+    weights_iter = []
+    g_tilda = control_signal
+
+    for t in tqdm(range(n_steps)):
+        x, y = dataset.sample_batch()
+        if g_tilda is None:
+            current_loss = model.train_step(x, y, g_tilda=None)
+        else:
+            current_loss = model.train_step(x, y, g_tilda=g_tilda[t, :, :])
+        loss.append(current_loss.detach().cpu().numpy())
+        if t % save_weights_every == 0:
+            weights.append(model.W.detach().cpu().numpy())
+            weights_iter.append(t)
+
+    return iters, np.array(loss), np.array(weights_iter), np.array(weights)
+
+
 def two_layer_training(model: BaseNetwork, dataset: BaseTask, n_steps, control_signal=(None, None), save_weights_every=100):
 
     loss = []
