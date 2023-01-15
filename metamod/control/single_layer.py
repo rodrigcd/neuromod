@@ -66,7 +66,7 @@ class SingleLayerControl(SingleLayerEq):
     def __init__(self, in_out_cov, in_cov, out_cov, init_weights, reg_coef,
                  intrinsic_noise, learning_rate=1e-5, n_steps=10000, time_constant=1.0,
                  control_lower_bound=0.0, control_upper_bound=0.5, init_g=None, gamma=0.99, cost_coef=0.3,
-                 reward_convertion=1.0, control_lr=1e-4):
+                 reward_convertion=1.0, control_lr=1e-4, square_control_loss=False):
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.dtype = torch.float32
@@ -80,6 +80,7 @@ class SingleLayerControl(SingleLayerEq):
         self.cost_coef = cost_coef
         self.reward_convertion = reward_convertion
         self.control_lr = control_lr
+        self.square_control_loss = square_control_loss
 
         self.W = torch.from_numpy(init_weights).type(self.dtype).to(self.device)
         self.input_dim = self.W.shape[1]
@@ -135,8 +136,12 @@ class SingleLayerControl(SingleLayerEq):
             return L
 
     def control_cost(self, get_numpy=False):
-        cost = torch.exp(
-            self.cost_coef * torch.sum(self.g ** 2, dim=(-1, -2)))- 1
+        if self.square_control_loss:
+            cost = self.cost_coef * torch.sum(self.g ** 2, dim=(-1, -2))
+        else:
+            cost = torch.exp(
+                self.cost_coef * torch.sum(self.g ** 2, dim=(-1, -2))) - 1
+
         if get_numpy:
             return cost.detach().cpu().numpy()
         else:

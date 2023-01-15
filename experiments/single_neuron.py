@@ -91,7 +91,8 @@ def main(argv):
                       "cost_coef": run_vales["betas"],
                       "reward_convertion": 1.0,
                       "init_g": None,
-                      "control_lr": 10.0}
+                      "control_lr": 10.0,
+                      "square_control_loss": True}
 
     dataset = dataset_class(**dataset_params)
     model_params["input_dim"] = dataset.input_dim

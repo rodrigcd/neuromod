@@ -3,7 +3,7 @@ nvidia-smi
 python -c "import torch;print(torch.cuda.is_available())"
 
 cd ..
-experiment_path="single_neuron"
+experiment_path="single_neuron_square_loss"
 save_path="../results/$experiment_path/"
 echo $save_path
 

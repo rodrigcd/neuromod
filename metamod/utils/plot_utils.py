@@ -551,26 +551,28 @@ def single_neuron_param_plot(result_dict, **plot_kwargs):
     f, ax = plt.subplots(2, len(selected_vars), figsize=figsize)
     for i, var_name in enumerate(selected_vars):
         # CONTROL PLOT
-        iters = result_dict[var_name][0]["data"].results["iters"]
-        control = [data["data"].results["control_signal"] for data in result_dict[var_name]]
+        iters = [np.arange(len(data["data"].params["control_params"]["control"].time_span)) for data in result_dict[var_name]]
+        control = [data["data"].params["control_params"]["control"] for data in result_dict[var_name]]
         n_curves = len(control)
         colors = cm.viridis(np.linspace(0, 1, n_curves))
-        if not isinstance(control, np.ndarray):
-            control = [val.detach().cpu().numpy() for val in control]
         var_sweep = [data["run_vals"][var_name] for data in result_dict[var_name]]
         control = np.stack(control, axis=0)
+        iters = np.stack(iters, axis=0)
         var_sweep = np.stack(var_sweep, axis=0)
         sort_index = np.argsort(var_sweep)
         control = control[sort_index, ...]
         var_sweep = var_sweep[sort_index, ...]
+        iters = iters[sort_index, ...]
 
         for j in range(n_curves):
-            ax[0, i].plot(iters, control[j, :, 0, 0], c=colors[j])
+            ax[0, i].plot(iters[j], control[j].g.detach().cpu().numpy()[:, 0, 0], c=colors[j])
 
         # LOSS PLOT
-        iters = result_dict[var_name][0]["data"].results["iters"]
+        iters = [np.arange(len(data["data"].params["control_params"]["control"].time_span)) for data in result_dict[var_name]]
         loss_eq = [data["data"].results["Loss_t_eq"] for data in result_dict[var_name]]
         loss_control = [data["data"].results["Loss_t_control_opt"] for data in result_dict[var_name]]
+        control = [data["data"].params["control_params"]["control"] for data in result_dict[var_name]]
+
         n_curves = len(loss_eq)
         colors = cm.viridis(np.linspace(0, 1, n_curves))
         #if not isinstance(loss_eq, np.ndarray):
@@ -579,22 +581,35 @@ def single_neuron_param_plot(result_dict, **plot_kwargs):
         #    loss_control = [val.detach().cpu().numpy() for val in loss_control]
 
         var_sweep = [data["run_vals"][var_name] for data in result_dict[var_name]]
+        cost_coef = np.array([data["data"].params["control_params"]["cost_coef"] for data in result_dict[var_name]])
+        reward_convertion = np.array([data["data"].params["control_params"]["reward_convertion"] for data in result_dict[var_name]])
+
         loss_eq = np.stack(loss_eq, axis=0)
         loss_control = np.stack(loss_control, axis=0)
+        control = np.stack(control, axis=0)
+        iters = np.stack(iters, axis=0)
         var_sweep = np.stack(var_sweep, axis=0)
         sort_index = np.argsort(var_sweep)
         loss_eq = loss_eq[sort_index, ...]
         loss_control = loss_control[sort_index, ...]
         var_sweep = var_sweep[sort_index, ...]
+        control = control[sort_index, ...]
+        cost_coef = cost_coef[sort_index, ...]
+        reward_convertion = reward_convertion[sort_index, ...]
+        iters = iters[sort_index, ...]
 
         for j in range(n_curves):
-            loss_diff = loss_control[j, :] - loss_eq[j, :]
-            ax[1, i].plot(iters, loss_diff, c=colors[j])
+            baseline_net_r = -control[j].reward_convertion*loss_eq[j, :]
+            control_net_r = -control[j].reward_convertion*loss_control[j, :] - control[j].control_cost(get_numpy=True)
+            net_diff = control_net_r - baseline_net_r
+            ax[1, i].plot(iters[j], net_diff, c=colors[j])
 
 
-
-def compute_control_cost(G1_t, G2_t, cost_coef):
-    control_cost = np.exp(cost_coef * (np.sum(G1_t ** 2, axis=(-1, -2)) + np.sum(G2_t ** 2, axis=(-1, -2)))) - 1
+def compute_control_cost(G1_t, G2_t=None, cost_coef=0.3):
+    if G2_t is None:
+        control_cost = np.exp(cost_coef * (np.sum(G1_t ** 2, axis=(-1, -2)))) - 1
+    else:
+        control_cost = np.exp(cost_coef * (np.sum(G1_t ** 2, axis=(-1, -2)) + np.sum(G2_t ** 2, axis=(-1, -2)))) - 1
     return control_cost
 
 
