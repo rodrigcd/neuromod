@@ -93,6 +93,12 @@ def main(argv):
     model_params["input_dim"] = dataset.input_dim
     model_params["output_dim"] = dataset.output_dim
 
+    if args["dataset"] == "Semantic":
+        model_params["W1_0"] = np.random.normal(scale=1e-7,
+                                                size=(model_params["hidden_dim"], model_params["input_dim"]))
+        model_params["W2_0"] = np.random.normal(scale=1e-7,
+                                                size=(model_params["output_dim"], model_params["hidden_dim"]))
+
     # Init neural network
     model = LinearNet(**model_params)
 

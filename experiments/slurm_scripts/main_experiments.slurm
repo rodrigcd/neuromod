@@ -1,12 +1,12 @@
 #!/bin/bash
 #
-#SBATCH --job-name=s_neuron
-#SBATCH --output=logs/out_sing_neuron.log
-#SBATCH --error=logs/err_sing_neuron.log
+#SBATCH --job-name=small_w
+#SBATCH --output=logs/out_small_w.log
+#SBATCH --error=logs/err_small_w.log
 #SBATCH -p gpu
 #SBATCH -N 1
-#SBATCH --mem=3G
-#SBATCH --time=0-2:00
+#SBATCH --mem=6G
+#SBATCH --time=0-12:00
 #SBATCH --gres=gpu:1  # this is important to use GPUs
 #SBATCH --array=0-140
 
@@ -17,10 +17,10 @@ eval "$(conda shell.bash hook)"
 conda activate metamod
 
 # Single neuron experiment (Ask for 2 hours)
-bash single_neuron.sh $SLURM_ARRAY_TASK_ID
+# bash single_neuron.sh $SLURM_ARRAY_TASK_ID
 
 # Linear network experiment
-# bash single_task.sh $SLURM_ARRAY_TASK_ID
+bash single_task.sh $SLURM_ARRAY_TASK_ID
 
 # Task switch
 #bash task_switch.sh $SLURM_ARRAY_TASK_ID
