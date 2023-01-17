@@ -1,14 +1,14 @@
 #!/bin/bash
 #
-#SBATCH --job-name=small_w
-#SBATCH --output=logs/out_small_w.log
-#SBATCH --error=logs/err_small_w.log
+#SBATCH --job-name=base_reg
+#SBATCH --output=logs/out_base_reg.log
+#SBATCH --error=logs/err_base_reg.log
 #SBATCH -p gpu
 #SBATCH -N 1
 #SBATCH --mem=6G
 #SBATCH --time=0-12:00
 #SBATCH --gres=gpu:1  # this is important to use GPUs
-#SBATCH --array=0-140
+#SBATCH --array=0-4  #0-140 for single neuron
 
 source /usr/share/modules/init/bash
 module load cuda/11.6

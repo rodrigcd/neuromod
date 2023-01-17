@@ -54,7 +54,7 @@ def main(argv):
         model_params = {"learning_rate": 5e-3,
                         "hidden_dim": 6,
                         "intrinsic_noise": 0.0,
-                        "reg_coef": 0.0,
+                        "reg_coef": 0.05,
                         "W1_0": None,
                         "W2_0": None}
     elif args["datasets"] == "MultiDimGaussian":
@@ -72,7 +72,7 @@ def main(argv):
         model_params = {"learning_rate": 5e-3,
                         "hidden_dim": 8,
                         "intrinsic_noise": 0.0,
-                        "reg_coef": 0.0,
+                        "reg_coef": 0.05,
                         "W1_0": None,
                         "W2_0": None}
     elif args["datasets"] == "MNIST_shared":
@@ -90,7 +90,7 @@ def main(argv):
         model_params = {"learning_rate": 5e-3,
                         "hidden_dim": 50,
                         "intrinsic_noise": 0.0,
-                        "reg_coef": 0.0,
+                        "reg_coef": 0.05,
                         "W1_0": None,
                         "W2_0": None}
     elif args["datasets"] == "MNIST_diff":
