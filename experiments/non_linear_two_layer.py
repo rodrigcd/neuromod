@@ -27,7 +27,7 @@ def main(argv):
     args = parser.parse_args(argv)
     args = vars(args)
 
-    run_name = args["run_name"] + "_" + args["datasets"]
+    run_name = args["run_name"] + "_" + args["dataset"]
     results_path = args["save_path"]
 
     n_steps = args["n_steps"]
