@@ -2,7 +2,7 @@ import numpy as np
 from tqdm import tqdm
 import os
 from metamod.control import NonLinearNetEq, NonLinearNetControl
-from metamod.tasks import AffineCorrelatedGaussian, MultiDimGaussian
+from metamod.tasks import AffineCorrelatedGaussian, MultiDimGaussian, SemanticTask, MNIST
 from metamod.trainers import two_layer_training
 from metamod.networks import NonLinearNet
 from metamod.utils import save_var, get_date_time
@@ -36,29 +36,48 @@ def main(argv):
 
     results_dict = {}
 
-    # Init dataset
-    batch_size = 2048
+    # Correlated Gaussians
+    if args["dataset"] == "AffineCorrelatedGaussian":
+        dataset_params = {"mu_vec": (3.0, 1.0),
+                          "batch_size": 32,
+                          "dependence_parameter": 0.8,
+                          "sigma_vec": (1.0, 1.0)}
+        dataset_class = AffineCorrelatedGaussian
+        model_params = {"learning_rate": 5e-3,
+                        "hidden_dim": 8,
+                        "intrinsic_noise": 0.0,
+                        "reg_coef": 0.01,
+                        "W1_0": None,
+                        "W2_0": None}
 
-    if args["datasets"] == "AffineCorrelatedGaussian":
-        print("Using correlated gaussians")
-        dataset_params = {"mu_vec": (3.0, 1.0), "sigma_vec": (1.0, 1.0), "dependence_parameter": 0.8,
-                          "batch_size": batch_size}
-        # Init dataset
-        dataset = AffineCorrelatedGaussian(**dataset_params)
+    # Semantic task
+    elif args["dataset"] == "Semantic":
+        dataset_params = {"batch_size": 32,
+                          "h_levels": 4}
+        dataset_class = SemanticTask
+        model_params = {"learning_rate": 5e-3,
+                        "hidden_dim": 30,
+                        "intrinsic_noise": 0.0,
+                        "reg_coef": 0.01,
+                        "W1_0": None,
+                        "W2_0": None}
+
+    # MNIST
+    elif args["dataset"] == "MNIST":
+        dataset_params = {"batch_size": 32,
+                          "new_shape": (5, 5),
+                          "subset": (1, 3)}
+        dataset_class = MNIST
+        model_params = {"learning_rate": 5e-3,
+                        "hidden_dim": 50,
+                        "intrinsic_noise": 0.0,
+                        "reg_coef": 0.01,
+                        "W1_0": None,
+                        "W2_0": None}
+
     else:
-        print("Using 4D gaussians")
-        dataset_params = {"mu_vec": np.array((1.0, 3.0, 0.5, 0.5)),
-                           "batch_size": batch_size,
-                           "max_std": 0.5}
-        # Init dataset
-        dataset = MultiDimGaussian(**dataset_params)
-
-    model_params = {"learning_rate": 1e-3,
-                    "hidden_dim": 8,
-                    "intrinsic_noise": 0.00,
-                    "reg_coef": 0.01,
-                    "W1_0": None,
-                    "W2_0": None}
+        print("Invalid dataset")
+        return
 
     control_params = {"control_lower_bound": -0.5,
                       "control_upper_bound": 0.5,
@@ -68,15 +87,17 @@ def main(argv):
                       "init_g": None,
                       "control_lr": 5.0}
 
+    # Init dataset
+    dataset = dataset_class(**dataset_params)
+    model_params["input_dim"] = dataset.input_dim
+    model_params["output_dim"] = dataset.output_dim
+
     print("##### dataset_params #####")
     print(dataset_params)
     print("##### model_params #####")
     print(model_params)
     print("##### control_params #####")
     print(control_params)
-
-    model_params["input_dim"] = dataset.input_dim
-    model_params["output_dim"] = dataset.output_dim
 
     # Init neural network
     model = NonLinearNet(**model_params)
