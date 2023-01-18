@@ -19,7 +19,7 @@ def main(argv):
     parser.add_argument(
         '--save-path', type=str, default="../results/non_linear/")
     parser.add_argument(
-        '--datasets', type=str, default="AffineCorrelatedGaussian")
+        '--dataset', type=str, default="AffineCorrelatedGaussian")
     parser.add_argument(
         '--n-steps', type=int, default=12000)
     parser.add_argument(
