@@ -47,7 +47,7 @@ def main(argv):
         model_params = {"learning_rate": 5e-3,
                         "hidden_dim": 6,
                         "intrinsic_noise": 0.0,
-                        "reg_coef": 0.1,
+                        "reg_coef": 0.01,
                         "W1_0": None,
                         "W2_0": None}
 
@@ -59,7 +59,7 @@ def main(argv):
         model_params = {"learning_rate": 5e-3,
                         "hidden_dim": 30,
                         "intrinsic_noise": 0.0,
-                        "reg_coef": 0.1,
+                        "reg_coef": 0.01,
                         "W1_0": None,
                         "W2_0": None}
 
@@ -72,7 +72,7 @@ def main(argv):
         model_params = {"learning_rate": 5e-3,
                         "hidden_dim": 50,
                         "intrinsic_noise": 0.0,
-                        "reg_coef": 0.1,
+                        "reg_coef": 0.01,
                         "W1_0": None,
                         "W2_0": None}
 
@@ -94,9 +94,9 @@ def main(argv):
     model_params["output_dim"] = dataset.output_dim
 
     if args["dataset"] == "Semantic":
-        model_params["W1_0"] = np.random.normal(scale=1e-6,
+        model_params["W1_0"] = np.random.normal(scale=1e-4,
                                                 size=(model_params["hidden_dim"], model_params["input_dim"]))
-        model_params["W2_0"] = np.random.normal(scale=1e-6,
+        model_params["W2_0"] = np.random.normal(scale=1e-4,
                                                 size=(model_params["output_dim"], model_params["hidden_dim"]))
 
     # Init neural network
