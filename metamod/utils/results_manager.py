@@ -11,9 +11,9 @@ from metamod.utils import plot_lines, plot_weight_ev, load_results, plot_control
 
 class ResultsManager(object):
 
-    def __init__(self, resuts_path, verbose=False):
+    def __init__(self, resuts_path, verbose=False, load_all=True):
         self.results_path = resuts_path
-        self.params, self.results = load_results(self.results_path)
+        self.params, self.results = load_results(self.results_path, load_all=load_all)
         self.results["W1_sim"], self.results["W2_sim"] = self.results["weights_sim"]
         self._plot_settings()
         if verbose:

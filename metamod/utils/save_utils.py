@@ -23,9 +23,12 @@ def get_date_time():
     return now
 
 
-def load_results(result_path):
+def load_results(result_path, load_all=True):
     params = pd.read_pickle(os.path.join(result_path, "params.pkl"))
-    results = pd.read_pickle(os.path.join(result_path, "results.pkl"))
+    if load_all:
+        results = pd.read_pickle(os.path.join(result_path, "results.pkl"))
+    else:
+        results = {"weights_sim": [[], []]}
     return params, results
 
 

@@ -5,4 +5,4 @@ from .save_utils import check_dir, save_var, get_date_time, load_results
 from .results_manager import ResultsManager, SingleLayerManager
 from .analyze_Q import QAnalysis
 from .results_manager import load_single_layer_vars
-from .appendix_plots import two_layer_parameters_plot
+from .appendix_plots import two_layer_parameters_plot, non_linear_network_plots, task_switch_weights_plot
