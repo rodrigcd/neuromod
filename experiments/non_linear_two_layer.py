@@ -170,8 +170,8 @@ def main(argv):
     results_dict["W2_t_control_opt"] = W2_t_opt
     results_dict["Loss_t_control_opt"] = Loss_t_opt
 
-    g1_tilda = control.g1_tilda
-    g2_tilda = control.g2_tilda
+    g1_tilda = control.g1_tilda.detach()
+    g2_tilda = control.g2_tilda.detach()
     control_signal = (g1_tilda, g2_tilda)
     W1_0, W2_0 = control_params["init_weights"]
     results_dict["control_signal"] = control_signal
