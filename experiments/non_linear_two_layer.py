@@ -39,7 +39,7 @@ def main(argv):
     # Correlated Gaussians
     if args["dataset"] == "AffineCorrelatedGaussian":
         dataset_params = {"mu_vec": (3.0, 1.0),
-                          "batch_size": 32,
+                          "batch_size": 2048,
                           "dependence_parameter": 0.8,
                           "sigma_vec": (1.0, 1.0)}
         dataset_class = AffineCorrelatedGaussian
@@ -52,7 +52,7 @@ def main(argv):
 
     # Semantic task
     elif args["dataset"] == "Semantic":
-        dataset_params = {"batch_size": 32,
+        dataset_params = {"batch_size": 2048,
                           "h_levels": 4}
         dataset_class = SemanticTask
         model_params = {"learning_rate": 5e-3,
@@ -64,7 +64,7 @@ def main(argv):
 
     # MNIST
     elif args["dataset"] == "MNIST":
-        dataset_params = {"batch_size": 32,
+        dataset_params = {"batch_size": 2048,
                           "new_shape": (5, 5),
                           "subset": (1, 3)}
         dataset_class = MNIST

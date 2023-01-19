@@ -218,11 +218,15 @@ def non_linear_network_plots(result_manager, **plot_kwargs):
 
     ### Loss plot ###
     plot_index = 0
-    loss_t_eq = result_manager.results["Loss_t_eq"]
+    loss_t_base = result_manager.results["Loss_t_eq"]
     loss_t_control = result_manager.results["Loss_t_control_opt"]
+    loss_sim_control = result_manager.results["Loss_t_sim_OPT"]
+    loss_sim_base = result_manager.results["Loss_t_sim"]
     iters = result_manager.results["iters"]
-    ax[plot_index].plot(iters, loss_t_eq, 'k', lw=line_width, label="Baseline")
-    ax[plot_index].plot(iters, loss_t_control, 'C0', lw=line_width, label="Controlled")
+    ax[plot_index].plot(iters, loss_sim_base, "k", lw=line_width, label="Sim baseline", alpha=0.3)
+    ax[plot_index].plot(iters, loss_sim_control, "C0", lw=line_width, label="Sim Control", alpha=0.3)
+    ax[plot_index].plot(iters, loss_t_base, 'k', lw=line_width, label="Baseline")
+    ax[plot_index].plot(iters, loss_t_control, 'C0', lw=line_width, label="Control")
     ax[plot_index].legend(fontsize=fontsize-2, frameon=False)
     #ax[0].set_xlabel("Task time", fontsize=fontsize)
     ax[plot_index].set_xlim(xlim)
