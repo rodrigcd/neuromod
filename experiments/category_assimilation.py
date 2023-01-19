@@ -49,7 +49,7 @@ def main(argv):
                         "W2_0": None}
         control_lr = 1.0
         iter_control = 600
-        n_steps = 8000
+        n_steps = 18000
 
     # MNIST
     elif args["dataset"] == "MNIST":
@@ -86,6 +86,12 @@ def main(argv):
     dataset = dataset_class(**dataset_params)
     model_params["input_dim"] = dataset.input_dim
     model_params["output_dim"] = dataset.output_dim
+
+    if args["dataset"] == "Semantic":
+        model_params["W1_0"] = np.random.normal(scale=1e-4,
+                                                size=(model_params["hidden_dim"], model_params["input_dim"]))
+        model_params["W2_0"] = np.random.normal(scale=1e-4,
+                                                size=(model_params["output_dim"], model_params["hidden_dim"]))
 
     # Init neural network
     model = LinearNet(**model_params)
