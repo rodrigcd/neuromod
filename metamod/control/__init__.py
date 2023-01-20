@@ -5,3 +5,4 @@ from .task_switch_linear_net import TaskSwitchLinearNetEq, TaskSwitchLinearNetCo
 from .constrained_g import LinearNetConstrainedG
 from .task_engagement import LinearNetTaskEngEq, LinearNetTaskEngControl
 from .batch_net_control import BatchNetworkControl
+from .cat_prop import CatPropControl
