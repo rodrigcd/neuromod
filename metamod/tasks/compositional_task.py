@@ -77,3 +77,4 @@ class TaskModulation(CompositionOfTasks):
         batch_x = np.concatenate(batch_x, axis=0)
         batch_y = np.concatenate(batch_y, axis=0)
         return batch_x, batch_y
+

@@ -363,9 +363,9 @@ def cat_assimilation_plot(result_manager1_list, result_manager2_list, **plot_kwa
     figsize = plot_kwargs["figsize"]
     line_width = plot_kwargs["line_width"]
     subplot_labels = plot_kwargs["subplot_labels"]
-    x_lim = None
-    if "x_lim" in plot_kwargs.keys():
-        x_lim = plot_kwargs["x_lim"]
+    xlim1 = None
+    if "xlim1" in plot_kwargs.keys():
+        xlim1 = plot_kwargs["xlim1"]
 
     f, ax = plt.subplots(2, 2, figsize=figsize)
 
@@ -394,6 +394,7 @@ def cat_assimilation_plot(result_manager1_list, result_manager2_list, **plot_kwa
     ax[0, 0].spines[['right', 'top']].set_visible(False)
     ax[0, 0].text(-0.15, 1.05, subplot_labels[0, 0], transform=ax[0, 0].transAxes,
                   size=fontsize, weight='bold')
+    ax[0, 0].set_xlim(xlim1)
 
     loss_diff = []
     for i, results in enumerate(result_manager2_list):
@@ -441,12 +442,13 @@ def cat_assimilation_plot(result_manager1_list, result_manager2_list, **plot_kwa
     ax[1, 0].spines[['right', 'top']].set_visible(False)
     ax[1, 0].text(-0.15, 1.05, subplot_labels[1, 0], transform=ax[1, 0].transAxes,
                   size=fontsize, weight='bold')
+    ax[1, 0].set_xlim(xlim1)
 
     # Drawing hierarchy tree
-    root_point = (6000, 0.11)
+    root_point = (7500, 0.1)
     height = 0.05
-    width = 4000
-    marker_size = 100
+    width = 4500
+    marker_size = 80
     draw_tree(ax[1, 0], n_levels, level_colors, root_point, height=height,
               width=width, marker_size=marker_size, line_width=line_width)
 
@@ -486,21 +488,51 @@ def cat_assimilation_plot(result_manager1_list, result_manager2_list, **plot_kwa
     # ax[1, 1].set_ylabel("\nu_{2}^{b}", fontsize=fontsize)
 
 
-def task_engagement_plot(result_manager1_list, result_manager2_list, **plot_kwargs):
+def task_engagement_plot(result_manager1_list, result_manager2_list, result_manager3_list, **plot_kwargs):
     fontsize = plot_kwargs["fontsize"]
     figsize = plot_kwargs["figsize"]
     line_width = plot_kwargs["line_width"]
     ylim2 = plot_kwargs["ylim2"]
+    ylim3 = plot_kwargs["ylim3"]
     subplot_labels = plot_kwargs["subplot_labels"]
     x_lim = None
     if "x_lim" in plot_kwargs.keys():
         x_lim = plot_kwargs["x_lim"]
-    f, ax = plt.subplots(2, 2, figsize=figsize)
+    f, ax = plt.subplots(3, 2, figsize=figsize)
 
     ### LOSS PLOT
     baseline_losses = []
     control_losses = []
     for i, results in enumerate(result_manager1_list):
+        if i == 0:
+            iters = results.results["iters"]
+        baseline_losses.append(results.results["Loss_t_eq"])
+        control_losses.append(results.results["Loss_t_control_opt"])
+
+    mean_baseline_losses = np.mean(np.stack(baseline_losses, axis=0), axis=0)
+    mean_control_losses = np.mean(np.stack(control_losses, axis=0), axis=0)
+    std_baseline_losses = np.std(np.stack(baseline_losses, axis=0), axis=0)
+    std_control_losses = np.std(np.stack(control_losses, axis=0), axis=0)
+
+    ax[1, 0].plot(iters, mean_baseline_losses, 'k', lw=line_width, label="Baseline")
+    ax[1, 0].plot(iters, mean_control_losses, 'C0', lw=line_width, label="Controlled")
+    ax[1, 0].fill_between(iters, mean_baseline_losses - 2*std_baseline_losses, mean_baseline_losses + 2*std_baseline_losses,
+                    color='k', alpha=0.3)
+    ax[1, 0].fill_between(iters, mean_control_losses - 2*std_control_losses, mean_control_losses + 2*std_control_losses,
+                    color='C0', alpha=0.3)
+
+    # ax[1, 0].set_ylabel(r"$\mathcal{L}(t)$", fontsize=fontsize)
+    ax[1, 0].tick_params(axis='both', which='major', labelsize=fontsize-2)
+    ax[1, 0].set_ylabel("Active", fontsize=fontsize)
+    #ax[1, 0].legend(fontsize=fontsize - 2, frameon=False)
+    ax[1, 0].spines[['right', 'top']].set_visible(False)
+    ax[1, 0].text(-0.15, 1.05, subplot_labels[1, 0], transform=ax[1, 0].transAxes,
+                  size=fontsize, weight='bold')
+    # ax[1, 0].set_xlabel("Task time", fontsize=fontsize)
+
+    baseline_losses = []
+    control_losses = []
+    for i, results in enumerate(result_manager2_list):
         if i == 0:
             iters = results.results["iters"]
         baseline_losses.append(results.results["Loss_t_eq"])
@@ -517,39 +549,13 @@ def task_engagement_plot(result_manager1_list, result_manager2_list, **plot_kwar
                     color='k', alpha=0.3)
     ax[0, 0].fill_between(iters, mean_control_losses - 2*std_control_losses, mean_control_losses + 2*std_control_losses,
                     color='C0', alpha=0.3)
-
-    ax[0, 0].set_ylabel(r"$\mathcal{L}(t)$", fontsize=fontsize)
     ax[0, 0].tick_params(axis='both', which='major', labelsize=fontsize-2)
-    ax[0, 0].set_title("Active Engagement", fontsize=fontsize)
-    ax[0, 0].legend(fontsize=fontsize - 2, frameon=False)
+    ax[0, 0].set_ylabel("Attentive", fontsize=fontsize)
+    ax[0, 0].set_title(r"$\mathcal{L}(t)$", fontsize=fontsize)
     ax[0, 0].spines[['right', 'top']].set_visible(False)
     ax[0, 0].text(-0.15, 1.05, subplot_labels[0, 0], transform=ax[0, 0].transAxes,
                   size=fontsize, weight='bold')
-
-    baseline_losses = []
-    control_losses = []
-    for i, results in enumerate(result_manager2_list):
-        if i == 0:
-            iters = results.results["iters"]
-        baseline_losses.append(results.results["Loss_t_eq"])
-        control_losses.append(results.results["Loss_t_control_opt"])
-
-    mean_baseline_losses = np.mean(np.stack(baseline_losses, axis=0), axis=0)
-    mean_control_losses = np.mean(np.stack(control_losses, axis=0), axis=0)
-    std_baseline_losses = np.std(np.stack(baseline_losses, axis=0), axis=0)
-    std_control_losses = np.std(np.stack(control_losses, axis=0), axis=0)
-
-    ax[0, 1].plot(iters, mean_baseline_losses, 'k', lw=line_width, label="Baseline")
-    ax[0, 1].plot(iters, mean_control_losses, 'C0', lw=line_width, label="Controlled")
-    ax[0, 1].fill_between(iters, mean_baseline_losses - 2*std_baseline_losses, mean_baseline_losses + 2*std_baseline_losses,
-                    color='k', alpha=0.3)
-    ax[0, 1].fill_between(iters, mean_control_losses - 2*std_control_losses, mean_control_losses + 2*std_control_losses,
-                    color='C0', alpha=0.3)
-    ax[0, 1].tick_params(axis='both', which='major', labelsize=fontsize-2)
-    ax[0, 1].set_title("Attentive Engagement", fontsize=fontsize)
-    ax[0, 1].spines[['right', 'top']].set_visible(False)
-    ax[0, 1].text(-0.15, 1.05, subplot_labels[0, 1], transform=ax[0, 1].transAxes,
-                  size=fontsize, weight='bold')
+    ax[0, 0].legend(fontsize=fontsize - 3, frameon=False)
 
     ### Engagement plot ###
     phis = []
@@ -565,16 +571,16 @@ def task_engagement_plot(result_manager1_list, result_manager2_list, **plot_kwar
         std_phi = std_phis[:, i]
         color = colors[i]
         legend = "Digits: " + str(result_manager1_list[0].params["dataset_params"]["dataset_list_params"][i]["subset"])
-        ax[1, 0].fill_between(iters, mean_phi - 2 * std_phi,
+        ax[1, 1].fill_between(iters, mean_phi - 2 * std_phi,
                               mean_phi + 2 * std_phi,
                               color=color, alpha=0.3)
-        ax[1, 0].plot(iters, mean_phi, color, lw=line_width, label=legend)
-    ax[1, 0].set_ylabel(r"$\psi_{\tau}(t)$", fontsize=fontsize)
-    ax[1, 0].tick_params(axis='both', which='major', labelsize=fontsize-2)
-    ax[1, 0].set_xlabel("Task time", fontsize=fontsize)
+        ax[1, 1].plot(iters, mean_phi, color, lw=line_width, label=legend)
+    #ax[1, 1].set_ylabel(r"$\psi_{\tau}(t)$", fontsize=fontsize)
+    ax[1, 1].tick_params(axis='both', which='major', labelsize=fontsize-2)
+
     # ax[1, 0].legend(fontsize=fontsize - 2, frameon=False)
-    ax[1, 0].spines[['right', 'top']].set_visible(False)
-    ax[1, 0].text(-0.15, 1.05, subplot_labels[1, 0], transform=ax[1, 0].transAxes,
+    ax[1, 1].spines[['right', 'top']].set_visible(False)
+    ax[1, 1].text(-0.15, 1.05, subplot_labels[1, 1], transform=ax[1, 1].transAxes,
                   size=fontsize, weight='bold')
 
     phis = []
@@ -590,17 +596,74 @@ def task_engagement_plot(result_manager1_list, result_manager2_list, **plot_kwar
         std_phi = std_phis[:, i]
         color = colors[i]
         legend = "Digits: " + str(result_manager1_list[0].params["dataset_params"]["dataset_list_params"][i]["subset"])
-        ax[1, 1].fill_between(iters, mean_phi - 2 * std_phi,
+        ax[0, 1].fill_between(iters, mean_phi - 2 * std_phi,
                               mean_phi + 2 * std_phi,
                               color=color, alpha=0.3)
-        ax[1, 1].plot(iters, mean_phi, color, lw=line_width, label=legend)
-    ax[1, 1].tick_params(axis='both', which='major', labelsize=fontsize-2)
-    ax[1, 1].set_xlabel("Task time", fontsize=fontsize)
-    ax[1, 1].legend(fontsize=fontsize - 2, frameon=False)
-    ax[1, 1].set_ylim(ylim2)
-    ax[1, 1].spines[['right', 'top']].set_visible(False)
-    ax[1, 1].text(-0.15, 1.05, subplot_labels[1, 1], transform=ax[1, 1].transAxes,
+        ax[0, 1].plot(iters, mean_phi, color, lw=line_width, label=legend)
+    ax[0, 1].tick_params(axis='both', which='major', labelsize=fontsize-2)
+    #ax[0, 1].set_xlabel("Task time", fontsize=fontsize)
+    ax[0, 1].legend(fontsize=fontsize - 3, frameon=False)
+    ax[0, 1].set_ylim(ylim2)
+    ax[0, 1].spines[['right', 'top']].set_visible(False)
+    ax[0, 1].text(-0.15, 1.05, subplot_labels[0, 1], transform=ax[0, 1].transAxes,
                   size=fontsize, weight='bold')
+    ax[0, 1].set_title(r"$\psi_{\tau}(t)$", fontsize=fontsize)
+
+    phis = []
+    for i, results in enumerate(result_manager3_list):
+        if i == 0:
+            iters = results.results["iters"]
+        phis.append(results.results["final_engagement_coef"].detach().cpu().numpy())
+    mean_phis = np.mean(np.stack(phis, axis=0), axis=0)
+    std_phis = np.std(np.stack(phis, axis=0), axis=0)
+    colors = ["C"+str(i) for i in range(mean_phis.shape[-1])]
+    for i in range(mean_phis.shape[-1]):
+        mean_phi = mean_phis[:, i]
+        std_phi = std_phis[:, i]
+        color = colors[i]
+        legend = "Digits: " + str(result_manager1_list[0].params["dataset_params"]["dataset_list_params"][i]["subset"])
+        ax[2, 1].fill_between(iters, mean_phi - 2 * std_phi,
+                              mean_phi + 2 * std_phi,
+                              color=color, alpha=0.3)
+        ax[2, 1].plot(iters, mean_phi, color, lw=line_width, label=legend)
+    ax[2, 1].tick_params(axis='both', which='major', labelsize=fontsize-2)
+    # ax[0, 1].set_xlabel("Task time", fontsize=fontsize)
+    # ax[2, 1].legend(fontsize=fontsize - 2, frameon=False)
+    # ax[2, 1].set_ylim(ylim2)
+    ax[2, 1].spines[['right', 'top']].set_visible(False)
+    ax[2, 1].text(-0.15, 1.05, subplot_labels[2, 1], transform=ax[2, 1].transAxes,
+                  size=fontsize, weight='bold')
+    # ax[2, 1].set_title(r"$\psi_{\tau}(t)$", fontsize=fontsize)
+    ax[2, 1].set_xlabel("Task time", fontsize=fontsize)
+    ax[2, 1].set_ylim(ylim3)
+
+    baseline_losses = []
+    control_losses = []
+    for i, results in enumerate(result_manager2_list):
+        if i == 0:
+            iters = results.results["iters"]
+        baseline_losses.append(results.results["Loss_t_eq"])
+        control_losses.append(results.results["Loss_t_control_opt"])
+
+    mean_baseline_losses = np.mean(np.stack(baseline_losses, axis=0), axis=0)
+    mean_control_losses = np.mean(np.stack(control_losses, axis=0), axis=0)
+    std_baseline_losses = np.std(np.stack(baseline_losses, axis=0), axis=0)
+    std_control_losses = np.std(np.stack(control_losses, axis=0), axis=0)
+
+    ax[2, 0].plot(iters, mean_baseline_losses, 'k', lw=line_width, label="Baseline")
+    ax[2, 0].plot(iters, mean_control_losses, 'C0', lw=line_width, label="Controlled")
+    ax[2, 0].fill_between(iters, mean_baseline_losses - 2*std_baseline_losses, mean_baseline_losses + 2*std_baseline_losses,
+                    color='k', alpha=0.3)
+    ax[2, 0].fill_between(iters, mean_control_losses - 2*std_control_losses, mean_control_losses + 2*std_control_losses,
+                    color='C0', alpha=0.3)
+    ax[2, 0].tick_params(axis='both', which='major', labelsize=fontsize-2)
+    ax[2, 0].set_ylabel("Vector", fontsize=fontsize)
+    # ax[2, 0].set_title(r"$\mathcal{L}(t)$")
+    ax[2, 0].spines[['right', 'top']].set_visible(False)
+    ax[2, 0].text(-0.15, 1.05, subplot_labels[2, 0], transform=ax[2, 0].transAxes,
+                  size=fontsize, weight='bold')
+    #ax[2, 0].legend(fontsize=fontsize - 2, frameon=False)
+    ax[2, 0].set_xlabel("Task time", fontsize=fontsize)
 
 
 def single_neuron_param_plot(result_dict, **plot_kwargs):

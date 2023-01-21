@@ -6,3 +6,4 @@ from .task_switch import TaskSwitch
 from .mnist_task import MNIST
 from .hierarchical_task import SemanticTask
 from .compositional_task import CompositionOfTasks, TaskModulation
+from .class_modulation import MNISTClassMod

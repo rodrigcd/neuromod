@@ -55,6 +55,17 @@ class LinearNet(BaseNetwork):
         self.update_rule()
         return loss
 
+    def loss_function(self, x, y, g1_tilda=None, g2_tilda=None):
+        if g1_tilda is None:
+            y_pred = self.forward(x)
+        else:
+            y_pred = self.controlled_forward(x, g1_tilda=g1_tilda, g2_tilda=g2_tilda)
+        y_target = torch.from_numpy(y.T).type(self.dtype).to(self.device)
+        loss1 = torch.sum((y_pred - y_target)**2)/(2.0*y.shape[0])
+        loss2 = (self.reg_coef/2.0)*(torch.sum(self.W1**2) + torch.sum(self.W2**2))
+        loss = loss1 + loss2
+        return loss
+
     def update_rule(self):
         with torch.no_grad():
             self.W1 -= self.learning_rate*self.W1.grad
