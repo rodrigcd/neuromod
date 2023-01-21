@@ -45,3 +45,4 @@ class LinearTaskEngNet(LinearNet):
             self.update_rule()
 
         return real_loss
+

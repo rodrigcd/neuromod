@@ -55,3 +55,25 @@ class CompositionOfTasks(BaseTask):
             expected_x.append(expected_x_i)
             expected_y.append(expected_y_i)
         return input_corr, output_corr, input_output_corr, expected_y, expected_x
+
+
+class TaskModulation(CompositionOfTasks):
+
+    def __init__(self, dataset_classes=(), dataset_list_params=()):
+        super().__init__(dataset_classes, dataset_list_params)
+        self.input_dim = self.datasets[0].input_dim
+        self.output_dim = self.datasets[0].output_dim
+        self.batch_size = self.datasets[0].batch_size
+
+    def sample_batch(self, sigmoid_coef=None):
+        batch_x = []
+        batch_y = []
+        for i, dataset in enumerate(self.datasets):
+            if not sigmoid_coef is None:
+                dataset.batch_size = int(self.batch_size*sigmoid_coef[i])
+            x, y = dataset.sample_batch()
+            batch_x.append(x)
+            batch_y.append(y)
+        batch_x = np.concatenate(batch_x, axis=0)
+        batch_y = np.concatenate(batch_y, axis=0)
+        return batch_x, batch_y

@@ -1,14 +1,14 @@
 #!/bin/bash
 #
-#SBATCH --job-name=cat_prop
-#SBATCH --output=logs/out_cat_prop.log
-#SBATCH --error=logs/err_cat_prop.log
+#SBATCH --job-name=task_mod
+#SBATCH --output=logs/out_task_mod.log
+#SBATCH --error=logs/err_task_mod.log
 #SBATCH -p gpu
 #SBATCH -N 1
 #SBATCH --mem=6G
 #SBATCH --time=0-18:00
 #SBATCH --gres=gpu:1  # this is important to use GPUs
-#SBATCH --array=0-9  #0-140 for single neuron
+#SBATCH --array=0-4  #0-140 for single neuron
 
 source /usr/share/modules/init/bash
 module load cuda/11.6
@@ -35,4 +35,7 @@ conda activate metamod
 # bash non_linear_two_layer.sh
 
 # CATEGORY ASSIMILATION CLASS PROPORTIONAL # SELECT BETA, THEN ARRAY 0-9
-bash cat_prop.sh $SLURM_ARRAY_TASK_ID
+# bash cat_prop.sh $SLURM_ARRAY_TASK_ID
+
+# Task Modulation 0-4 array
+bash task_modulation.sh $SLURM_ARRAY_TASK_ID
