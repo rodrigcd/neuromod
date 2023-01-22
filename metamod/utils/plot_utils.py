@@ -9,6 +9,7 @@ from bokeh.layouts import gridplot
 from bokeh.io import output_notebook
 from bokeh.palettes import Viridis, Category10, Category20
 from bokeh.io import export_svg
+from scipy.special import softmax
 
 plt.rcParams['text.usetex'] = True
 
@@ -898,7 +899,7 @@ def class_prop_plot(result_manager1_list, result_manager2_list, **plot_kwargs):
     ax[0, 1].tick_params(axis='both', which='major', labelsize=fontsize - 2)
     # ax[0, 1].set_ylabel(r"$\mathcal{L}_{B}(t)-\mathcal{L}_{C}(t)$", fontsize=fontsize)
     ax[0, 1].set_title("Semantic", fontsize=fontsize)
-    ax[0, 1].set_xlim([0, 7000])
+    ax[0, 1].set_xlim([0, 13000])
     ax[0, 1].spines[['right', 'top']].set_visible(False)
     ax[0, 1].text(-0.15, 1.05, subplot_labels[0, 1], transform=ax[0, 1].transAxes,
                   size=fontsize, weight='bold')
@@ -926,12 +927,13 @@ def class_prop_plot(result_manager1_list, result_manager2_list, **plot_kwargs):
     ax[1, 1].spines[['right', 'top']].set_visible(False)
     ax[1, 1].text(-0.15, 1.05, subplot_labels[1, 1], transform=ax[1, 1].transAxes,
                   size=fontsize, weight='bold')
+    ax[1, 1].set_xlim([0, 13000])
     # ax[1, 1].set_xlim(xlim1)
 
     # Drawing hierarchy tree
-    root_point = (12500, 1.9)
+    root_point = (9000, 1.9)
     height = 0.6
-    width = 9000
+    width = 7000
     marker_size = 80
     draw_tree(ax[1, 1], n_levels, level_colors, root_point, height=height,
               width=width, marker_size=marker_size, line_width=line_width)
@@ -1010,6 +1012,48 @@ def class_prop_plot(result_manager1_list, result_manager2_list, **plot_kwargs):
     ax[2, 1].set_xlim(zoom_xlim)
     ax[2, 1].set_ylim(zoom_ylim)
     ax[2, 1].legend(fontsize=fontsize-4, frameon=False)
+
+
+def task_modulation_plot(results, **plot_kwargs):
+    fontsize = plot_kwargs["fontsize"]
+    figsize = plot_kwargs["figsize"]
+    line_width = plot_kwargs["line_width"]
+    ylim2 = plot_kwargs["ylim2"]
+    ylim3 = plot_kwargs["ylim3"]
+    subplot_labels = plot_kwargs["subplot_labels"]
+    x_lim = None
+    ax = plot_kwargs["ax"]
+    if "x_lim" in plot_kwargs.keys():
+        x_lim = plot_kwargs["x_lim"]
+
+    ### LOSS PLOT
+    baseline_losses = []
+    iters = results.results["iters"]
+    base_loss = results.results["Loss_t_eq"]
+    control_loss = results.results["Loss_t_control_opt"]
+
+    ax[0].plot(iters, base_loss, 'k', lw=line_width, label="Baseline")
+    ax[0].plot(iters, control_loss, 'C0', lw=line_width, label="Controlled")
+    ax[0].tick_params(axis='both', which='major', labelsize=fontsize-2)
+    ax[0].set_ylabel("Attentive", fontsize=fontsize)
+    ax[0].set_title(r"$\mathcal{L}(t)$", fontsize=fontsize)
+    ax[0].spines[['right', 'top']].set_visible(False)
+    ax[0].text(-0.15, 1.05, subplot_labels[0], transform=ax[0].transAxes,
+                  size=fontsize, weight='bold')
+    ax[0].legend(fontsize=fontsize - 3, frameon=False)
+
+    ### Engagement plot ###
+    phis = softmax(results.results["final_engagement_coef"].detach().cpu().numpy(), axis=1)
+    colors = ["C"+str(i) for i in range(phis.shape[-1])]
+    legend = ((0, 1), (7, 1), (8, 9))
+    for i in range(phis.shape[-1]):
+        leg = "Digits: " + str(legend[i])
+        ax[1].plot(iters, phis[:, i], colors[i], lw=line_width, label=leg)
+    ax[1].tick_params(axis='both', which='major', labelsize=fontsize-2)
+    ax[1].legend(fontsize=fontsize - 2, frameon=False)
+    ax[1].spines[['right', 'top']].set_visible(False)
+    ax[1].text(-0.15, 1.05, subplot_labels[1], transform=ax[1].transAxes,
+                  size=fontsize, weight='bold')
 
 
 def compute_control_cost(G1_t, G2_t=None, cost_coef=0.3):
