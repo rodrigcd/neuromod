@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import matplotlib.cm as cm
 import numpy as np
+import pandas as pd
 
 from bokeh.plotting import figure, show, output_file, save
 from bokeh.layouts import gridplot
@@ -836,6 +837,181 @@ def single_neuron_baseline_plot(result_manager, **plot_kwargs):
     ax[1, 1].spines[['right', 'top']].set_visible(False)
 
 
+def class_prop_plot(result_manager1_list, result_manager2_list, **plot_kwargs):
+    fontsize = plot_kwargs["fontsize"]
+    figsize = plot_kwargs["figsize"]
+    line_width = plot_kwargs["line_width"]
+    subplot_labels = plot_kwargs["subplot_labels"]
+    analysis_path = plot_kwargs["analysis_path"]
+    zoom_xlim = plot_kwargs["zoom_xlim"]
+    zoom_ylim = plot_kwargs["zoom_ylim"]
+    ax = plot_kwargs["ax"]
+    window_size = 300
+    xlim1 = None
+    if "xlim1" in plot_kwargs.keys():
+        xlim1 = plot_kwargs["xlim1"]
+
+    extra_data = pd.read_pickle(analysis_path)
+
+    ### LOSS PLOT ###
+    loss_diff = []
+    for i, results in enumerate(result_manager2_list):
+        if i == 0:
+            iters = results.results["iters"]
+        baseline_loss = results.results["Loss_t_eq"]
+        control_loss = results.results["Loss_t_control_opt"]
+        loss_diff.append(baseline_loss - control_loss)
+
+    mean_loss_diff = np.mean(np.stack(loss_diff, axis=0), axis=0)
+    std_loss_diff = np.std(np.stack(loss_diff, axis=0), axis=0, ddof=1)
+
+    ax[0, 0].plot(iters, mean_loss_diff, 'C0', lw=line_width, label="Controlled")
+    ax[0, 0].fill_between(iters, mean_loss_diff - 1*std_loss_diff,
+                          mean_loss_diff + 1*std_loss_diff,
+                          color='C0', alpha=0.3)
+
+    #ax[0, 0].legend(fontsize=fontsize-2)
+    # ax[0, 0].set_xlabel("Task time", fontsize=fontsize)
+    ax[0, 0].tick_params(axis='both', which='major', labelsize=fontsize - 2)
+    ax[0, 0].set_ylabel(r"$\mathcal{L}_{B}(t)-\mathcal{L}_{C}(t)$", fontsize=fontsize)
+    ax[0, 0].set_title("MNIST", fontsize=fontsize)
+    ax[0, 0].spines[['right', 'top']].set_visible(False)
+    ax[0, 0].text(-0.15, 1.05, subplot_labels[0, 0], transform=ax[0, 0].transAxes,
+                  size=fontsize, weight='bold')
+    ax[0, 0].set_xlim(xlim1)
+
+    loss_diff = []
+    for i, results in enumerate(result_manager1_list):
+        if i == 0:
+            iters = results.results["iters"]
+        baseline_loss = results.results["Loss_t_eq"]
+        control_loss = results.results["Loss_t_control_opt"]
+        loss_diff.append(baseline_loss - control_loss)
+
+    mean_loss_diff = np.mean(np.stack(loss_diff, axis=0), axis=0)
+    std_loss_diff = np.std(np.stack(loss_diff, axis=0), axis=0)
+
+    ax[0, 1].plot(iters, mean_loss_diff, 'C0', lw=line_width, label="Controlled")
+    ax[0, 1].fill_between(iters, mean_loss_diff - 1 * std_loss_diff,
+                          mean_loss_diff + 1 * std_loss_diff,
+                          color='C0', alpha=0.3)
+    ax[0, 1].tick_params(axis='both', which='major', labelsize=fontsize - 2)
+    # ax[0, 1].set_ylabel(r"$\mathcal{L}_{B}(t)-\mathcal{L}_{C}(t)$", fontsize=fontsize)
+    ax[0, 1].set_title("Semantic", fontsize=fontsize)
+    ax[0, 1].set_xlim([0, 7000])
+    ax[0, 1].spines[['right', 'top']].set_visible(False)
+    ax[0, 1].text(-0.15, 1.05, subplot_labels[0, 1], transform=ax[0, 1].transAxes,
+                  size=fontsize, weight='bold')
+    #
+    ### NUS PLOT WITH TREE ###
+    result_manager1 = result_manager1_list[0]
+    result_manager2 = result_manager2_list[0]
+    nus = result_manager1.results["final_engagement_coef"]
+    iters = result_manager1.results["iters"]
+    nus = nus.detach().cpu().numpy()
+    n_levels = result_manager1.params["dataset_params"]["dataset"].h_level
+    leaves_per_level = 2**(np.arange(n_levels))
+    level_colors = ["C" + str(i) for i in range(n_levels)]
+    level_per_curve = []
+    current_level = 0
+    for n_leaves in leaves_per_level:
+        for i in range(n_leaves):
+            level_per_curve.append(current_level)
+        current_level += 1
+    for i in range(nus.shape[-1]):
+        ax[1, 1].plot(iters, nus[:, i], lw=line_width, color=level_colors[level_per_curve[i]])
+    # ax[1, 1].set_xlabel("Task time", fontsize=fontsize)
+    #ax[1, 1].set_ylabel(r"$\phi_{c}(t)$", fontsize=fontsize)
+    ax[1, 1].tick_params(axis='both', which='major', labelsize=fontsize - 2)
+    ax[1, 1].spines[['right', 'top']].set_visible(False)
+    ax[1, 1].text(-0.15, 1.05, subplot_labels[1, 1], transform=ax[1, 1].transAxes,
+                  size=fontsize, weight='bold')
+    # ax[1, 1].set_xlim(xlim1)
+
+    # Drawing hierarchy tree
+    root_point = (12500, 1.9)
+    height = 0.6
+    width = 9000
+    marker_size = 80
+    draw_tree(ax[1, 1], n_levels, level_colors, root_point, height=height,
+              width=width, marker_size=marker_size, line_width=line_width)
+    #
+    ### MNIST NUS PLOT ###
+    iters = result_manager2.results["iters"]
+    nus_list = []
+
+    for i, results in enumerate(result_manager2_list):
+        if i == 0:
+            iters = results.results["iters"]
+        nus = results.results["final_engagement_coef"]
+        nus_list.append(nus.detach().cpu().numpy())
+
+    mean_nus = np.mean(np.stack(nus_list, axis=0), axis=0)
+    std_nus = np.std(np.stack(nus_list, axis=0), axis=0)
+
+    for i in range(nus.shape[-1])[:10]:
+        ax[1, 0].plot(iters, mean_nus[:, i], lw=line_width, label="Digit "+str(i))
+    # ax[1, 1].legend()
+    # ax[1, 0].set_xlabel("Task time", fontsize=fontsize)
+    ax[1, 0].tick_params(axis='both', which='major', labelsize=fontsize - 2)
+    ax[1, 0].set_xlim(xlim1)
+    #ax[1, 0].set_ylim([0, 0.0018])
+    ax[1, 0].spines[['right', 'top']].set_visible(False)
+    ax[1, 0].text(-0.15, 1.05, subplot_labels[1, 0], transform=ax[1, 0].transAxes,
+                  size=fontsize, weight='bold')
+    #ax[1, 0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+    #ax[1, 0].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+    ax[1, 0].set_ylabel(r"$\phi_{c}(t)$", fontsize=fontsize)
+
+    current_digit = 0
+    for p2 in range(2):
+        for p1 in range(5):
+            ax[1, 0].text(0.65*(1+p1*0.1), 0.8*(1-p2*0.18), str(current_digit), transform=ax[1, 0].transAxes,
+                          size=fontsize+5, weight='bold', color="C"+str(current_digit))
+            current_digit += 1
+
+    # LOSS PER CLASS
+    base_loss_per_class = extra_data["baseline_error_class"]
+    control_loss_per_class = extra_data["control_error_class"]
+    iters = extra_data["iters"]
+    for i in range(base_loss_per_class.shape[1]):
+        ax[2, 0].plot(iters, sliding_window(base_loss_per_class[:, i], half_window=window_size),
+                      linestyle="--", lw=line_width-1.5,
+                      color="C"+str(i), alpha=0.6)
+        ax[2, 0].plot(iters, sliding_window(control_loss_per_class[:, i], half_window=window_size),
+                      linestyle="-", lw=line_width-1.5,
+                      color="C"+str(i), alpha=0.6)
+    # ax[1, 1].set_xlabel("Task time", fontsize=fontsize)
+    #ax[1, 1].set_ylabel(r"$\phi_{c}(t)$", fontsize=fontsize)
+    ax[2, 0].tick_params(axis='both', which='major', labelsize=fontsize - 2)
+    ax[2, 0].spines[['right', 'top']].set_visible(False)
+    ax[2, 0].text(-0.15, 1.05, subplot_labels[2, 0], transform=ax[2, 0].transAxes,
+                  size=fontsize, weight='bold')
+    ax[2, 0].set_ylabel(r"$\mathcal{L}_{c}(t)$", fontsize=fontsize)
+    ax[2, 0].set_xlabel("Task time", fontsize=fontsize)
+    ax[2, 0].set_xlim(xlim1)
+
+    # COMPARED LOSS BETWEEN CURRICULUMS
+    base_loss = extra_data["baseline_loss"]
+    balanced_control_loss = extra_data["balanced_loss"]
+    curriculum_loss = extra_data["curriculum_loss"]
+    ax[2, 1].plot(iters, base_loss, 'C0', lw=line_width-1, label="Uniform")
+    ax[2, 1].plot(iters, balanced_control_loss, 'C1', lw=line_width-1, label="Balanced")
+    ax[2, 1].plot(iters, curriculum_loss, "C2", lw=line_width-1, label="Curriculum")
+    # ax[1, 1].set_xlabel("Task time", fontsize=fontsize)
+    # ax[1, 1].set_ylabel(r"$\phi_{c}(t)$", fontsize=fontsize)
+    ax[2, 1]
+    ax[2, 1].tick_params(axis='both', which='major', labelsize=fontsize - 2)
+    ax[2, 1].spines[['right', 'top']].set_visible(False)
+    ax[2, 1].text(-0.15, 1.05, subplot_labels[2, 1], transform=ax[2, 1].transAxes,
+                  size=fontsize, weight='bold')
+    ax[2, 1].set_ylabel(r"$\mathcal{L}(t)$", fontsize=fontsize)
+    ax[2, 1].set_xlabel("Task time", fontsize=fontsize)
+    ax[2, 1].set_xlim(zoom_xlim)
+    ax[2, 1].set_ylim(zoom_ylim)
+    ax[2, 1].legend(fontsize=fontsize-4, frameon=False)
+
+
 def compute_control_cost(G1_t, G2_t=None, cost_coef=0.3):
     if G2_t is None:
         control_cost = np.exp(cost_coef * (np.sum(G1_t ** 2, axis=(-1, -2)))) - 1
@@ -856,6 +1032,15 @@ def compute_all_weight_sparsity(w_list):
     W_norm1 = np.mean(np.abs(conc_w), axis=-1)
     W_norm2 = np.sqrt(np.mean(conc_w**2, axis=-1))
     return W_norm1, W_norm2
+
+
+def sliding_window(vals, half_window=10):
+    smooth_vals = []
+    for i in range(len(vals)):
+        min_index = np.max([i-half_window, 0])
+        max_index = np.min([i+half_window, len(vals)])
+        smooth_vals.append(np.mean(vals[min_index:max_index]))
+    return np.array(smooth_vals)
 
 
 def draw_tree(ax, n_levels, level_colors, root_point, height=3.0, width=3.0, marker_size=500, line_width=3):

@@ -36,6 +36,7 @@ class MNISTClassMod(MNIST):
             x.append(c_x_data[batch_idx, :])
             y.append(c_y_data[batch_idx])
         x = np.concatenate(x, axis=0)
+        # print(x.shape)
         y = np.concatenate(y, axis=0)
         self._batch_id_t += 1
         return x, y
