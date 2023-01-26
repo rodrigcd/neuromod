@@ -641,7 +641,7 @@ def task_engagement_plot(result_manager1_list, result_manager2_list, result_mana
 
     baseline_losses = []
     control_losses = []
-    for i, results in enumerate(result_manager2_list):
+    for i, results in enumerate(result_manager3_list):
         if i == 0:
             iters = results.results["iters"]
         baseline_losses.append(results.results["Loss_t_eq"])

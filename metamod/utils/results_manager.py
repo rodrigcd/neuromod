@@ -19,6 +19,18 @@ class ResultsManager(object):
         if verbose:
             self.show_keys()
 
+    def show_params(self):
+        print("### Param Keys ###")
+        for key in self.params.keys():
+            print("---", key, "---")
+            mssg = []
+            for sub_key in self.params[key].keys():
+                sub_mssg = sub_key + ": "+str(self.params[key][sub_key]) + " \n"
+                mssg.append(sub_mssg)
+            print(", ".join(mssg))
+        print("### Results Keys ###")
+        print(self.results.keys())
+
     def show_keys(self):
         print("### Results from", self.results_path, "###")
         print("### Param Keys ###")
@@ -168,6 +180,18 @@ class SingleLayerManager(object):
         if verbose:
             self.show_keys()
 
+    def show_params(self):
+        print("### Param Keys ###")
+        for key in self.params.keys():
+            print("---", key, "---")
+            mssg = []
+            for sub_key in self.params[key].keys():
+                sub_mssg = sub_key + ": "+str(self.params[key][sub_key]) + " \n"
+                mssg.append(sub_mssg)
+            print(", ".join(mssg))
+        print("### Results Keys ###")
+        print(self.results.keys())
+
     def show_keys(self):
         print("### Results from", self.results_path, "###")
         print("### Param Keys ###")
@@ -242,7 +266,7 @@ def load_results_by_id(run_id):
         # print("using n_steps", run_vales["n_steps"])
         label = "n_steps"
 
-    results_dir = glob.glob("../results/single_neuron/single_neuron_id_" + str(run_id) + "_*")
+    results_dir = glob.glob("../results/single_neuron_square_loss/single_neuron_id_" + str(run_id) + "_*")
     if len(results_dir) == 0:
         return None, None
     result = SingleLayerManager(results_dir[0])

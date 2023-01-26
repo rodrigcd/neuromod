@@ -41,7 +41,7 @@ def two_layer_parameters_plot(result_manager, **plot_kwargs):
                                 "C"+str(weight_id)+"--", lw=line_width)
             ax[plot_index].plot(iters, w_t_control[:, weight1_ids[weight_id]],
                                 "C" + str(weight_id), lw=line_width)
-    ax[plot_index].legend(fontsize=fontsize-2, frameon=False)
+    # ax[plot_index].legend(fontsize=fontsize-2, frameon=False)
     ax[plot_index].tick_params(axis='both', which='major', labelsize=fontsize-2)
     ax[plot_index].spines[['right', 'top']].set_visible(False)
     ax[plot_index].set_xlabel("Task time", fontsize=fontsize)
@@ -380,6 +380,7 @@ def non_linear_network_plots(result_manager, **plot_kwargs):
                         size=fontsize, weight='bold')
     # ax[plot_index].set_yscale("log")
     ax[plot_index].set_xlim(xlim)
+    ax[plot_index].set_xlabel("Task time", fontsize=fontsize)
 
     ### L1 LOSS ###
     plot_index = 4
@@ -392,8 +393,9 @@ def non_linear_network_plots(result_manager, **plot_kwargs):
     ax[plot_index].tick_params(axis='both', which='major', labelsize=fontsize - 2)
     ax[plot_index].set_ylabel("$L_{1}$ norm", fontsize=fontsize)
     ax[plot_index].spines[['right', 'top']].set_visible(False)
-    ax[plot_index].text(--0.15, 1.05, subplot_labels[plot_index], transform=ax[plot_index].transAxes,
+    ax[plot_index].text(-0.15, 1.05, subplot_labels[plot_index], transform=ax[plot_index].transAxes,
                   size=fontsize, weight='bold')
+    ax[plot_index].set_xlabel("Task time", fontsize=fontsize)
 
     ### L2 LOSS ###
     plot_index = 5

@@ -16,5 +16,10 @@ class BaseTask(object):
         linear_mapping = input_output_corr.T @ np.linalg.inv(input_corr)
         return linear_mapping
 
+    def get_best_possible_error(self):
+        input_corr, output_corr, input_output_corr, expected_y, expected_x = self.get_correlation_matrix()
+        min_loss = (np.trace(output_corr) - np.trace(input_output_corr.T @ np.linalg.inv(input_corr) @ input_output_corr))/2.0
+        return min_loss
+
     def set_random_seed(self, seed):
         np.random.seed(seed=seed)
