@@ -11,7 +11,7 @@ from bokeh.palettes import Viridis, Category10, Category20
 from bokeh.io import export_svg
 from scipy.special import softmax
 
-plt.rcParams['text.usetex'] = True
+# plt.rcParams['text.usetex'] = True
 
 
 def plot_weight_ev(flat_W_t, flat_W_t_set2, iters, iters_set2, title="W", legend=("Simulation", "Equation")):

@@ -4,7 +4,7 @@ from bokeh.palettes import Viridis, Category10, Category20
 from bokeh.layouts import gridplot
 from bokeh.io import output_notebook
 import glob
-output_notebook()
+# output_notebook()
 
 from metamod.utils import plot_lines, plot_weight_ev, load_results, plot_control, plot_net_reward
 

@@ -11,7 +11,7 @@ from bokeh.io import export_svg
 np.random.seed(0)  # For picking random weights
 from .plot_utils import compute_all_weight_sparsity
 
-plt.rcParams['text.usetex'] = True
+# plt.rcParams['text.usetex'] = True
 
 
 def two_layer_parameters_plot(result_manager, **plot_kwargs):
