@@ -85,24 +85,34 @@ def two_layer_engage_training(model: LinearTaskEngNet, dataset: BaseTask, n_step
     return iters, np.array(loss), np.array(weights_iter), (np.array(weights1), np.array(weights2))
 
 
-def LR_two_layer_training(model: LRLinearNet, dataset: BaseTask, n_steps, opt_lr=None, save_weights_every=100):
+def LR_two_layer_training(model: LRLinearNet, dataset: BaseTask, n_steps, opt_lr=None, save_weights_every=100,
+                          return_test=False):
 
     loss = []
     iters = np.arange(n_steps)
     weights1 = []
     weights2 = []
     weights_iter = []
+    test_loss = []
 
     for t in tqdm(range(n_steps)):
         x, y = dataset.sample_batch()
+        if return_test:
+            x_test, y_test = dataset.sample_batch(training=False)
+            current_test_loss = model.loss_function(x_test, y_test)
         if opt_lr is None:
             current_loss = model.train_step(x, y)
         else:
             current_loss = model.train_step(x, y, opt_lr=opt_lr[t])
         loss.append(current_loss.detach().cpu().numpy())
+        if return_test:
+            test_loss.append(current_test_loss.detach().cpu().numpy())
         if t % save_weights_every == 0:
             weights1.append(model.W1.detach().cpu().numpy())
             weights2.append(model.W2.detach().cpu().numpy())
             weights_iter.append(t)
 
-    return iters, np.array(loss), np.array(weights_iter), (np.array(weights1), np.array(weights2))
+    if return_test:
+        return iters, np.array(loss), np.array(test_loss), np.array(weights_iter), (np.array(weights1), np.array(weights2))
+    else:
+        return iters, np.array(loss), None, np.array(weights_iter), (np.array(weights1), np.array(weights2))

@@ -8,13 +8,14 @@ import copy
 from tqdm import tqdm
 
 
-def main(adam_lr):
+def main():
     run_name = "learning_rate_control"
     results_path = "../results"
     results_dict = {}
     n_steps = 15000
     save_weights_every = 20
     iter_control = 100
+    adam_lr = 0.0005  # 0.0005 for cost_coef 1e-4
 
     dataset_params = {"batch_size": 32,
                       "h_levels": 4}
@@ -112,17 +113,21 @@ def main(adam_lr):
     W1_t_opt, W2_t_opt = control.get_weights(time_span, get_numpy=True)
     Loss_t_opt = control.get_loss_function(W1_t_opt, W2_t_opt, get_numpy=True)
 
-    f, ax = plt.subplots(2, 2, figsize=(12, 9))
-    ax[0, 0].plot(cumulated_reward)
-    ax[0, 0].set_title("learning_rate "+str(adam_lr))
-    ax[0, 1].plot(control.opt_lr.detach().cpu().numpy())
-    ax[0, 1].set_title("control_signal cost"+str(control_params["cost_coef"]))
-    ax[1, 0].plot(Loss_t_opt, label="opt")
-    ax[1, 0].plot(Loss_t, label="eq")
-    ax[1, 0].legend()
-    ax[1, 1].plot(mean_grad)
-    ax[1, 1].set_title("mean_grad")
-    plt.savefig("aux_figures_this_is_it/learning_rate_"+str(adam_lr)+".pdf", bbox_inches='tight')
+    results_dict["W1_t_control_opt"] = W1_t_opt
+    results_dict["W2_t_control_opt"] = W2_t_opt
+    results_dict["Loss_t_control_opt"] = Loss_t_opt
+
+    # f, ax = plt.subplots(2, 2, figsize=(12, 9))
+    # ax[0, 0].plot(cumulated_reward)
+    # ax[0, 0].set_title("learning_rate "+str(adam_lr))
+    # ax[0, 1].plot(control.opt_lr.detach().cpu().numpy())
+    # ax[0, 1].set_title("control_signal cost"+str(control_params["cost_coef"]))
+    # ax[1, 0].plot(Loss_t_opt, label="opt")
+    # ax[1, 0].plot(Loss_t, label="eq")
+    # ax[1, 0].legend()
+    # ax[1, 1].plot(mean_grad)
+    # ax[1, 1].set_title("mean_grad")
+    # plt.savefig("aux_figures_this_is_it/learning_rate_"+str(adam_lr)+".pdf", bbox_inches='tight')
 
 
 if __name__ == "__main__":

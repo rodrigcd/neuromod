@@ -43,14 +43,7 @@ class LinearNet(BaseNetwork):
         return y_hat + torch.normal(mean=0, std=self.intrinsic_noise, size=y_hat.shape).to(self.device)
 
     def train_step(self, x, y, g1_tilda=None, g2_tilda=None):
-        if g1_tilda is None:
-            y_pred = self.forward(x)
-        else:
-            y_pred = self.controlled_forward(x, g1_tilda=g1_tilda, g2_tilda=g2_tilda)
-        y_target = torch.from_numpy(y.T).type(self.dtype).to(self.device)
-        loss1 = torch.sum((y_pred - y_target)**2)/(2.0*y.shape[0])
-        loss2 = (self.reg_coef/2.0)*(torch.sum(self.W1**2) + torch.sum(self.W2**2))
-        loss = loss1 + loss2
+        loss = self.loss_function(x, y, g1_tilda=g1_tilda, g2_tilda=g2_tilda)
         loss.backward()
         self.update_rule()
         return loss

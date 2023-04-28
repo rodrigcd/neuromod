@@ -116,7 +116,7 @@ class MNIST(BaseTask):
         else:
             input_data = self.test_input_data
             label_data = self.test_label_data
-            n_samples = self.n_train
+            n_samples = self.n_test
 
         input_corr = (input_data.T @ input_data)/n_samples
         output_corr = (label_data.T @ label_data)/n_samples

@@ -131,7 +131,6 @@ class LRLinearNetControl(LinearNetEq):
         return opt_lr, opt_lr_tilda
 
     def _bound_opt_lr(self, opt_lr):
-        print(opt_lr.grad, torch.mean(opt_lr))
         if self.control_upper_bound is None and self.control_lower_bound is not None:
             opt_lr.data.clamp_(min=self.control_lower_bound)
         elif self.control_upper_bound is not None and self.control_lower_bound is not None:
