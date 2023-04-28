@@ -1,7 +1,7 @@
 import torch
 from tqdm import tqdm
 from metamod.tasks import BaseTask
-from metamod.networks import BaseNetwork, LinearTaskEngNet
+from metamod.networks import BaseNetwork, LinearTaskEngNet, LRLinearNet
 import numpy as np
 
 
@@ -76,6 +76,29 @@ def two_layer_engage_training(model: LinearTaskEngNet, dataset: BaseTask, n_step
         else:
             current_loss = model.train_step(x, y, g1_tilda=g1_tilda[t, :, :], g2_tilda=g2_tilda[t, :, :],
                                             engagement_coef=eng_coef_t)
+        loss.append(current_loss.detach().cpu().numpy())
+        if t % save_weights_every == 0:
+            weights1.append(model.W1.detach().cpu().numpy())
+            weights2.append(model.W2.detach().cpu().numpy())
+            weights_iter.append(t)
+
+    return iters, np.array(loss), np.array(weights_iter), (np.array(weights1), np.array(weights2))
+
+
+def LR_two_layer_training(model: LRLinearNet, dataset: BaseTask, n_steps, opt_lr=None, save_weights_every=100):
+
+    loss = []
+    iters = np.arange(n_steps)
+    weights1 = []
+    weights2 = []
+    weights_iter = []
+
+    for t in tqdm(range(n_steps)):
+        x, y = dataset.sample_batch()
+        if opt_lr is None:
+            current_loss = model.train_step(x, y)
+        else:
+            current_loss = model.train_step(x, y, opt_lr=opt_lr[t])
         loss.append(current_loss.detach().cpu().numpy())
         if t % save_weights_every == 0:
             weights1.append(model.W1.detach().cpu().numpy())

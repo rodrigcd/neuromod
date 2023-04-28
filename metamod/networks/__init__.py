@@ -5,3 +5,4 @@ from .non_linear_net import NonLinearNet
 from .task_engagement_net import LinearTaskEngNet
 from .full_grad_net import FullGradNet
 from .cat_prop import LinearCatPropNet
+from .rate_net import LRLinearNet

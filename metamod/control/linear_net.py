@@ -5,7 +5,8 @@ import numpy as np
 class LinearNetEq(object):
 
     def __init__(self, in_out_cov, in_cov, out_cov, init_weights, reg_coef,
-                 intrinsic_noise, learning_rate=1e-5, n_steps=10000, time_constant=1.0):
+                 intrinsic_noise, learning_rate=1e-5, n_steps=10000, time_constant=1.0,
+                 in_out_cov_test=None, in_cov_test=None, out_cov_test=None):
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.dtype = torch.float32
@@ -13,6 +14,16 @@ class LinearNetEq(object):
         self.in_out_cov = torch.from_numpy(in_out_cov).requires_grad_(False).type(self.dtype).to(self.device)
         self.in_cov = torch.from_numpy(in_cov).requires_grad_(False).type(self.dtype).to(self.device)
         self.out_cov = torch.from_numpy(out_cov).requires_grad_(False).type(self.dtype).to(self.device)
+
+        if in_out_cov_test is not None:
+            self.in_out_cov_test = torch.from_numpy(in_out_cov_test).requires_grad_(False).type(self.dtype).to(self.device)
+            self.in_cov_test = torch.from_numpy(in_cov_test).requires_grad_(False).type(self.dtype).to(self.device)
+            self.out_cov_test = torch.from_numpy(out_cov_test).requires_grad_(False).type(self.dtype).to(self.device)
+        else:
+            self.in_out_cov_test = None
+            self.in_cov_test = None
+            self.out_cov_test = None
+
         self.reg_coef = reg_coef
         self.time_constant = time_constant
         self.learning_rate = learning_rate
@@ -59,15 +70,20 @@ class LinearNetEq(object):
         else:
             return W1_t, W2_t
 
-    def get_loss_function(self, W1, W2, get_numpy=False):
+    def get_loss_function(self, W1, W2, get_numpy=False, use_test=False):
         W_t = W2 @ W1
         if isinstance(W_t, np.ndarray):
             W_t = torch.from_numpy(W_t).type(self.dtype).to(self.device)
             W2 = torch.from_numpy(W2).type(self.dtype).to(self.device)
             W1 = torch.from_numpy(W1).type(self.dtype).to(self.device)
-        L1 = 0.5*(torch.trace(self.out_cov) - torch.diagonal(2*self.in_out_cov @ W_t, dim1=-2, dim2=-1).sum(-1)
-                          + torch.diagonal(self.in_cov @ torch.transpose(W_t, dim0=-1, dim1=-2) @ W_t,
+        if use_test:
+            L1 = 0.5*(torch.trace(self.out_cov_test) - torch.diagonal(2*self.in_out_cov_test @ W_t, dim1=-2, dim2=-1).sum(-1)
+                          + torch.diagonal(self.in_cov_test @ torch.transpose(W_t, dim0=-1, dim1=-2) @ W_t,
                                            dim1=-2, dim2=-1).sum(-1)) + 0.5*W_t.shape[1]*self.intrinsic_noise**2
+        else:
+            L1 = 0.5*(torch.trace(self.out_cov) - torch.diagonal(2*self.in_out_cov @ W_t, dim1=-2, dim2=-1).sum(-1)
+                              + torch.diagonal(self.in_cov @ torch.transpose(W_t, dim0=-1, dim1=-2) @ W_t,
+                                               dim1=-2, dim2=-1).sum(-1)) + 0.5*W_t.shape[1]*self.intrinsic_noise**2
         L2 = (self.reg_coef/2.0)*(torch.sum(W1**2, (-1, -2)) + torch.sum(W2**2, (-1, -2)))
         L = L1 + L2
         if get_numpy:
@@ -80,6 +96,7 @@ class LinearNetControl(LinearNetEq):
 
     def __init__(self, in_out_cov, in_cov, out_cov, init_weights, reg_coef,
                  intrinsic_noise, learning_rate=1e-5, n_steps=10000, time_constant=1.0,
+                 in_out_cov_test=None, in_cov_test=None, out_cov_test=None,
                  control_lower_bound=0.0, control_upper_bound=0.5, init_g=None, gamma=0.99, cost_coef=0.3,
                  reward_convertion=1.0, control_lr=1e-4):
 
@@ -87,7 +104,8 @@ class LinearNetControl(LinearNetEq):
         self.dtype = torch.float32
 
         super().__init__(in_out_cov, in_cov, out_cov, init_weights, reg_coef,
-                         intrinsic_noise, learning_rate, n_steps, time_constant)
+                         intrinsic_noise, learning_rate, n_steps, time_constant,
+                         in_out_cov_test, in_cov_test, out_cov_test)
 
         self.control_upper_bound = control_upper_bound
         self.control_lower_bound = control_lower_bound
@@ -143,15 +161,20 @@ class LinearNetControl(LinearNetEq):
 
         return dW1, dW2
 
-    def get_loss_function(self, W1, W2, get_numpy=False):
+    def get_loss_function(self, W1, W2, get_numpy=False, use_test=False):
         if isinstance(W1, np.ndarray):
             W2 = torch.from_numpy(W2).type(self.dtype).to(self.device)
             W1 = torch.from_numpy(W1).type(self.dtype).to(self.device)
 
         W_t = (W2 * self.g2_tilda) @ (W1 * self.g1_tilda)
-        L1 = 0.5*(torch.trace(self.out_cov) - torch.diagonal(2*self.in_out_cov @ W_t, dim1=-2, dim2=-1).sum(-1)
-                          + torch.diagonal(self.in_cov @ torch.transpose(W_t, dim0=-1, dim1=-2) @ W_t,
-                                           dim1=-2, dim2=-1).sum(-1)) + 0.5*W_t.shape[1]*self.intrinsic_noise**2
+        if use_test:
+            L1 = 0.5*(torch.trace(self.out_cov_test) - torch.diagonal(2*self.in_out_cov_test @ W_t, dim1=-2, dim2=-1).sum(-1)
+                            + torch.diagonal(self.in_cov_test @ torch.transpose(W_t, dim0=-1, dim1=-2) @ W_t,
+                                            dim1=-2, dim2=-1).sum(-1)) + 0.5*W_t.shape[1]*self.intrinsic_noise**2
+        else:
+            L1 = 0.5*(torch.trace(self.out_cov) - torch.diagonal(2*self.in_out_cov @ W_t, dim1=-2, dim2=-1).sum(-1)
+                              + torch.diagonal(self.in_cov @ torch.transpose(W_t, dim0=-1, dim1=-2) @ W_t,
+                                               dim1=-2, dim2=-1).sum(-1)) + 0.5*W_t.shape[1]*self.intrinsic_noise**2
         L2 = (self.reg_coef/2.0)*(torch.sum(W1**2, (-1, -2)) + torch.sum(W2**2, (-1, -2)))
         L = L1 + L2
         if get_numpy:
@@ -187,12 +210,12 @@ class LinearNetControl(LinearNetEq):
         else:
             return self.time_span
 
-    def train_step(self, get_numpy=False, lr=None):
+    def train_step(self, get_numpy=False, lr=None, eval_on_test=False):
         if lr is None:
             lr = self.control_lr
 
         W1_t_control, W2_t_control = self.get_weights(self.time_span)
-        L_t = self.get_loss_function(W1=W1_t_control, W2=W2_t_control)
+        L_t = self.get_loss_function(W1=W1_t_control, W2=W2_t_control, use_test=eval_on_test)
         C_t = self.control_cost()
 
         instant_reward_rate = self.gamma**(self.time_span)*(-self.reward_convertion*L_t-C_t)
