@@ -1,14 +1,14 @@
 #!/bin/bash
 #
-#SBATCH --job-name=task_mod
-#SBATCH --output=logs/out_task_mod.log
-#SBATCH --error=logs/err_task_mod.log
+#SBATCH --job-name=learning_rate
+#SBATCH --output=logs/out_learning_rate.log
+#SBATCH --error=logs/err_learning_rate.log
 #SBATCH -p gpu
 #SBATCH -N 1
 #SBATCH --mem=6G
 #SBATCH --time=0-18:00
 #SBATCH --gres=gpu:1  # this is important to use GPUs
-#SBATCH --array=0-4  #0-140 for single neuron
+#SBATCH --array=0-14  #0-140 for single neuron
 
 source /usr/share/modules/init/bash
 module load cuda/11.6
@@ -38,4 +38,7 @@ conda activate metamod
 # bash cat_prop.sh $SLURM_ARRAY_TASK_ID
 
 # Task Modulation 0-4 array
-bash task_modulation.sh $SLURM_ARRAY_TASK_ID
+# bash task_modulation.sh $SLURM_ARRAY_TASK_ID
+
+# Learning learning rate 0-14 array
+bash learning_learning_rate.sh $SLURM_ARRAY_TASK_ID
