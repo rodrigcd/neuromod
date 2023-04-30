@@ -1,8 +1,9 @@
 import torch
 from tqdm import tqdm
-from metamod.tasks import BaseTask
-from metamod.networks import BaseNetwork, LinearTaskEngNet, LRLinearNet
+from metamod.tasks import BaseTask, MultiTask
+from metamod.networks import BaseNetwork, LinearTaskEngNet, LRLinearNet, NetworkSet, LinearNet
 import numpy as np
+from typing import Union
 
 
 def single_layer_training(model: BaseNetwork, dataset: BaseTask, n_steps, control_signal=None, save_weights_every=100):
@@ -85,8 +86,8 @@ def two_layer_engage_training(model: LinearTaskEngNet, dataset: BaseTask, n_step
     return iters, np.array(loss), np.array(weights_iter), (np.array(weights1), np.array(weights2))
 
 
-def LR_two_layer_training(model: LRLinearNet, dataset: BaseTask, n_steps, opt_lr=None, save_weights_every=100,
-                          return_test=False):
+def LR_two_layer_training(model: Union[LRLinearNet, LinearNet], dataset: BaseTask, n_steps, opt_lr=None,
+                          save_weights_every=100, return_test=False):
 
     loss = []
     iters = np.arange(n_steps)
@@ -116,3 +117,36 @@ def LR_two_layer_training(model: LRLinearNet, dataset: BaseTask, n_steps, opt_lr
         return iters, np.array(loss), np.array(test_loss), np.array(weights_iter), (np.array(weights1), np.array(weights2))
     else:
         return iters, np.array(loss), None, np.array(weights_iter), (np.array(weights1), np.array(weights2))
+
+
+def set_network_training(model: NetworkSet, dataset: MultiTask, n_steps, save_weights_every=100, return_test=False):
+
+    loss = []
+    iters = np.arange(n_steps)
+    weights1 = []
+    weights2 = []
+    weights_iter = []
+    test_loss = []
+
+    for i, m in enumerate(model.networks):
+        results = LR_two_layer_training(model=m,
+                                        dataset=dataset.datasets[i],
+                                        n_steps=n_steps,
+                                        save_weights_every=save_weights_every,
+                                        return_test=return_test)
+
+        loss.append(results[1])
+        test_loss.append(results[2])
+        weights_iter.append(results[3])
+        weights1.append(results[4][0])
+        weights2.append(results[4][1])
+
+    loss = np.stack(loss, axis=0)
+    test_loss = np.stack(test_loss, axis=0)
+    weights_iter = np.stack(weights_iter, axis=0)
+    weights1 = np.stack(weights1, axis=0)
+    weights2 = np.stack(weights2, axis=0)
+    avg_training_loss = np.mean(loss, axis=0)
+    avg_test_loss = np.mean(test_loss, axis=0)
+
+    return iters, loss, test_loss, weights_iter, (np.array(weights1), np.array(weights2))
