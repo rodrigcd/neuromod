@@ -129,6 +129,7 @@ def set_network_training(model: NetworkSet, dataset: MultiTask, n_steps, save_we
     test_loss = []
 
     for i, m in enumerate(model.networks):
+        print(dataset.datasets[i].subsets)
         results = LR_two_layer_training(model=m,
                                         dataset=dataset.datasets[i],
                                         n_steps=n_steps,
@@ -146,7 +147,5 @@ def set_network_training(model: NetworkSet, dataset: MultiTask, n_steps, save_we
     weights_iter = np.stack(weights_iter, axis=0)
     weights1 = np.stack(weights1, axis=0)
     weights2 = np.stack(weights2, axis=0)
-    avg_training_loss = np.mean(loss, axis=0)
-    avg_test_loss = np.mean(test_loss, axis=0)
 
     return iters, loss, test_loss, weights_iter, (np.array(weights1), np.array(weights2))

@@ -6,7 +6,7 @@ class LinearNetEq(object):
 
     def __init__(self, in_out_cov, in_cov, out_cov, init_weights, reg_coef,
                  intrinsic_noise, learning_rate=1e-5, n_steps=10000, time_constant=1.0,
-                 in_out_cov_test=None, in_cov_test=None, out_cov_test=None):
+                 in_out_cov_test=None, in_cov_test=None, out_cov_test=None, optimize_init_weights=False):
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.dtype = torch.float32
@@ -29,11 +29,14 @@ class LinearNetEq(object):
         self.learning_rate = learning_rate
         self.intrinsic_noise = intrinsic_noise
         self.n_steps = n_steps
-        self.W1 = torch.tensor(init_weights[0], dtype=self.dtype, device=self.device)
-        self.W2 = torch.tensor(init_weights[1], dtype=self.dtype, device=self.device)
-        self.input_dim = self.W1.shape[1]
-        self.hidden_dim = self.W1.shape[0]
-        self.output_dim = self.W2.shape[0]
+        self.optimize_init_weights = optimize_init_weights
+        self.init_weights = init_weights
+
+        self.reset_weights()
+
+        self.input_dim = self.W1_init.shape[1]
+        self.hidden_dim = self.W1_init.shape[0]
+        self.output_dim = self.W2_init.shape[0]
         time_span = np.arange(0, n_steps) * learning_rate
         self.dt = time_span[1] - time_span[0]
         self.time_span = torch.from_numpy(time_span).requires_grad_(False).type(self.dtype).to(self.device)
@@ -49,12 +52,16 @@ class LinearNetEq(object):
 
     def get_weights(self, time_span, W1_0=None, W2_0=None, get_numpy=False):
         if W1_0 is None or W2_0 is None:
-            W1_0 = self.W1
-            W2_0 = self.W2
+            W1_0 = self.W1_init
+            W2_0 = self.W2_init
         W1_t = []
         W2_t = []
-        current_W1 = torch.clone(W1_0)
-        current_W2 = torch.clone(W2_0)
+        if self.optimize_init_weights:
+            current_W1 = W1_0
+            current_W2 = W2_0
+        else:
+            current_W1 = torch.clone(W1_0)
+            current_W2 = torch.clone(W2_0)
         W1_t.append(current_W1)
         W2_t.append(current_W2)
         for i, t in enumerate(time_span[:-1]):
@@ -91,6 +98,14 @@ class LinearNetEq(object):
         else:
             return L
 
+    def reset_weights(self):
+        if self.optimize_init_weights:
+            self.W1_init = self.init_weights[0]
+            self.W2_init = self.init_weights[1]
+        else:
+            self.W1_init = torch.tensor(self.init_weights[0], dtype=self.dtype, device=self.device)
+            self.W2_init = torch.tensor(self.init_weights[1], dtype=self.dtype, device=self.device)
+
 
 class LinearNetControl(LinearNetEq):
 
@@ -102,7 +117,6 @@ class LinearNetControl(LinearNetEq):
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.dtype = torch.float32
-
         super().__init__(in_out_cov, in_cov, out_cov, init_weights, reg_coef,
                          intrinsic_noise, learning_rate, n_steps, time_constant,
                          in_out_cov_test, in_cov_test, out_cov_test)

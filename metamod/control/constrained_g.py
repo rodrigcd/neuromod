@@ -17,10 +17,14 @@ class LinearNetConstrainedG(LinearNetControl):
         self.update_first_layer = update_first_layer
         self.update_second_layer = update_second_layer
 
-        super().__init__(in_out_cov, in_cov, out_cov, init_weights, reg_coef,
-                         intrinsic_noise, learning_rate, n_steps, time_constant,
-                         control_lower_bound, control_upper_bound, init_g, gamma, cost_coef,
-                         reward_convertion, control_lr)
+        super().__init__(in_out_cov=in_out_cov, in_cov=in_cov, out_cov=out_cov,
+                         init_weights=init_weights, reg_coef=reg_coef,
+                         intrinsic_noise=intrinsic_noise, learning_rate=learning_rate,
+                         n_steps=n_steps, time_constant=time_constant,
+                         control_lower_bound=control_lower_bound,
+                         control_upper_bound=control_upper_bound,
+                         init_g=init_g, gamma=gamma, cost_coef=cost_coef,
+                         reward_convertion=reward_convertion, control_lr=control_lr)
 
     def _get_g(self, init_g, shape):
         if self.degree_of_control == "full":
