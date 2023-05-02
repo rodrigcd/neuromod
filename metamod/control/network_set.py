@@ -119,6 +119,11 @@ class NetworkSetControl(NetworkSetEq):
         cumulated_R = -torch.sum(instant_reward_rate)*self.dt
 
         self.optimizer.zero_grad()
+
+        # L_t.retain_grad()
+        # instant_reward_rate.retain_grad()
+        W1_t_control.retain_grad()
+        W2_t_control.retain_grad()
         cumulated_R.backward()
         self.optimizer.step()
         grad = torch.mean(self.W1_0.grad**2) + torch.mean(self.W2_0.grad**2)

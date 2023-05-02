@@ -5,17 +5,20 @@ from metamod.control import NetworkSetEq, LinearNetEq, NetworkSetControl
 import numpy as np
 import copy
 from tqdm import tqdm
-import matplotlib.pyplot as plt
+from functools import partialmethod
 
 
-def main():
+def maml_routine(**kwargs):
+    tqdm.__init__ = partialmethod(tqdm.__init__, disable=True)
     run_name = "deb_maml"
     results_path = "../results"
     results_dict = {}
-    n_steps = 150
+    n_steps = kwargs["n_steps"]
+    eval_steps = kwargs["eval_steps"]
     save_weights_every = 20
-    iter_control = 100
+    iter_control = kwargs["iter_control"]
     adam_lr = 0.005
+    control_lr = adam_lr
 
     dataset_params1 = {"batch_size": 256,
                        "new_shape": (5, 5),
@@ -26,8 +29,15 @@ def main():
     dataset_params3 = {"batch_size": 256,
                        "new_shape": (5, 5),
                        "subset": (8, 9)}
-    dataset_params = {"dataset_classes": (MNIST, MNIST, MNIST),
-                      "dataset_list_params": (dataset_params1, dataset_params2, dataset_params3)}
+    dataset_params4 = {"batch_size": 256,
+                       "new_shape": (5, 5),
+                       "subset": (3, 8)}
+    dataset_params5 = {"batch_size": 256,
+                       "new_shape": (5, 5),
+                       "subset": (5, 3)}
+    dataset_params = {"dataset_classes": (MNIST, MNIST, MNIST, MNIST, MNIST),
+                      "dataset_list_params": (dataset_params1, dataset_params2, dataset_params3,
+                                              dataset_params4, dataset_params5)}
 
     dataset_class = MultiTask
     optimize_test = False
@@ -38,20 +48,20 @@ def main():
                       "reg_coef": 0.0,
                       "W1_0": None,
                       "W2_0": None}
+
     network_class = LinearNet
     network_copies = len(dataset_params["dataset_classes"])
+
     model_params = {"network_class": network_class,
                     "network_params": network_params,
                     "n_copies": network_copies}
-
-    control_lr = adam_lr
 
     control_params = {"control_lower_bound": -1.0,
                       "control_upper_bound": 1.0,
                       "gamma": 1.0,
                       "cost_coef": 0,
                       "reward_convertion": 1.0,
-                      "control_lr": adam_lr}
+                      "control_lr": control_lr}
 
     dataset = dataset_class(**dataset_params)
     model_params["network_params"]["input_dim"] = dataset.input_dim
@@ -60,7 +70,6 @@ def main():
     # Init neural network
     model = NetworkSet(**model_params)
 
-    # Train neural network
     iters, loss, test_loss, weights_iter, weights = set_network_training(model=model, dataset=dataset, n_steps=n_steps,
                                                                          save_weights_every=save_weights_every,
                                                                          return_test=True)
@@ -83,6 +92,7 @@ def main():
         training=False)
 
     time_span = np.arange(0, len(iters)) * model_params["network_params"]["learning_rate"]
+    eval_time_span = np.arange(0, eval_steps) * model_params["network_params"]["learning_rate"]
     results_dict["time_span"] = time_span
 
     equation_params = {"network_class": LinearNetEq,
@@ -110,7 +120,6 @@ def main():
     results_dict["Loss_t_eq"] = Loss_t
     results_dict["Loss_t_eq_test"] = Loss_t_test
 
-    # Initialize control
     control_params = {**control_params, **copy.deepcopy(equation_params)}
     control = NetworkSetControl(**control_params)
 
@@ -135,15 +144,12 @@ def main():
     cumulated_reward = np.array(cumulated_reward).astype(float)
     results_dict["cumulated_reward_opt"] = cumulated_reward
 
-    f, ax = plt.subplots(1, 2, figsize=(12, 5))
-    ax[0].plot(cumulated_reward)
-    ax[0].set_title("MAML loss")
-    ax[1].plot(mean_grad)
-    ax[1].set_title("mean_grad")
-    plt.show()
+    W1_t_opt, W2_t_opt = control.get_weights(time_span, get_numpy=True)
+    Loss_t_opt = control.get_loss_function(W1_t_opt, W2_t_opt, get_numpy=True)
+    Loss_t_opt_test = control.get_loss_function(W1_t_opt, W2_t_opt, get_numpy=True, use_test=True)
 
-    print("debug")
+    results_dict["W1_t_control_opt"] = W1_t_opt
+    results_dict["W2_t_control_opt"] = W2_t_opt
+    results_dict["Loss_t_control_opt"] = Loss_t_opt
 
-
-if __name__ == "__main__":
-    main()
+    return results_dict

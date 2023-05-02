@@ -129,7 +129,7 @@ def set_network_training(model: NetworkSet, dataset: MultiTask, n_steps, save_we
     test_loss = []
 
     for i, m in enumerate(model.networks):
-        print(dataset.datasets[i].subsets)
+        # print(dataset.datasets[i].subsets)
         results = LR_two_layer_training(model=m,
                                         dataset=dataset.datasets[i],
                                         n_steps=n_steps,
