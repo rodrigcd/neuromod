@@ -73,7 +73,7 @@ class NetworkSetControl(NetworkSetEq):
         self.hidden_dim = self.W1_0.shape[0]
         self.output_dim = self.W2_0.shape[0]
         time_span = np.arange(0, n_steps) * learning_rate
-        self.dt = time_span[1]-time_span[0]
+        self.dt = learning_rate
         self.time_span = torch.from_numpy(time_span).requires_grad_(False).type(self.dtype).to(self.device)
 
         self.optimizer = torch.optim.Adam([self.W1_0, self.W2_0], lr=self.control_lr, amsgrad=True)
@@ -114,6 +114,9 @@ class NetworkSetControl(NetworkSetEq):
         L_t = self.get_loss_function(W1=W1_t_control, W2=W2_t_control, use_test=eval_on_test)
         C_t = self.control_cost()
         avg_L_t = torch.mean(L_t, dim=0)
+        mask = torch.ones(L_t.shape, device=self.device, dtype=self.dtype)
+        mask[0, :] = 0.0  # to avoid first step upper loss in MAML
+        L_t = L_t * mask  # to avoid first step upper loss in MAML
 
         instant_reward_rate = self.gamma**(self.time_span)*(-self.reward_convertion*avg_L_t-C_t)
         cumulated_R = -torch.sum(instant_reward_rate)*self.dt
@@ -126,9 +129,8 @@ class NetworkSetControl(NetworkSetEq):
         W2_t_control.retain_grad()
         cumulated_R.backward()
         self.optimizer.step()
-        grad = torch.mean(self.W1_0.grad**2) + torch.mean(self.W2_0.grad**2)
 
         if get_numpy:
-            return cumulated_R.detach().cpu().numpy(), grad.detach().cpu().numpy()
+            return cumulated_R.detach().cpu().numpy(), W1_t_control.grad.detach().cpu().numpy(), W2_t_control.grad
         else:
-            return cumulated_R, grad
+            return cumulated_R, W1_t_control.grad, W2_t_control.grad

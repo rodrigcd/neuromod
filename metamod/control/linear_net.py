@@ -38,7 +38,7 @@ class LinearNetEq(object):
         self.hidden_dim = self.W1_init.shape[0]
         self.output_dim = self.W2_init.shape[0]
         time_span = np.arange(0, n_steps) * learning_rate
-        self.dt = time_span[1] - time_span[0]
+        self.dt = learning_rate
         self.time_span = torch.from_numpy(time_span).requires_grad_(False).type(self.dtype).to(self.device)
 
     def weight_der(self, t, W1, W2, t_index=None):
@@ -134,7 +134,7 @@ class LinearNetControl(LinearNetEq):
         self.hidden_dim = self.W1.shape[0]
         self.output_dim = self.W2.shape[0]
         time_span = np.arange(0, n_steps) * learning_rate
-        self.dt = time_span[1]-time_span[0]
+        self.dt = learning_rate
         self.time_span = torch.from_numpy(time_span).requires_grad_(False).type(self.dtype).to(self.device)
 
         self.update_layer = 0  # Kind of a hack for other code :(

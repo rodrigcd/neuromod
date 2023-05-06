@@ -94,6 +94,7 @@ def maml_routine(**kwargs):
     time_span = np.arange(0, len(iters)) * model_params["network_params"]["learning_rate"]
     eval_time_span = np.arange(0, eval_steps) * model_params["network_params"]["learning_rate"]
     results_dict["time_span"] = time_span
+    results_dict["eval_time_span"] = eval_time_span
 
     equation_params = {"network_class": LinearNetEq,
                        "in_cov": input_corr,
@@ -135,21 +136,26 @@ def maml_routine(**kwargs):
 
     control_params["iters_control"] = iter_control
     cumulated_reward = []
-    mean_grad = []
+    W1_control_grad = []
+    W2_control_grad = []
 
     for i in tqdm(range(iter_control)):
-        R, grad = control.train_step(get_numpy=True, eval_on_test=optimize_test)
+        R, W1_grad, W2_grad = control.train_step(get_numpy=True, eval_on_test=optimize_test)
         cumulated_reward.append(R)
-        mean_grad.append(grad)
+        W1_control_grad.append(W1_grad)
+        W2_control_grad.append(W2_grad)
     cumulated_reward = np.array(cumulated_reward).astype(float)
     results_dict["cumulated_reward_opt"] = cumulated_reward
+    results_dict["W1_grad"] = W1_control_grad
+    results_dict["W2_grad"] = W2_control_grad
 
-    W1_t_opt, W2_t_opt = control.get_weights(time_span, get_numpy=True)
+    W1_t_opt, W2_t_opt = control.get_weights(eval_time_span, get_numpy=True)
     Loss_t_opt = control.get_loss_function(W1_t_opt, W2_t_opt, get_numpy=True)
     Loss_t_opt_test = control.get_loss_function(W1_t_opt, W2_t_opt, get_numpy=True, use_test=True)
 
     results_dict["W1_t_control_opt"] = W1_t_opt
     results_dict["W2_t_control_opt"] = W2_t_opt
     results_dict["Loss_t_control_opt"] = Loss_t_opt
+    results_dict["Loss_t_control_opt_test"] = Loss_t_opt_test
 
     return results_dict

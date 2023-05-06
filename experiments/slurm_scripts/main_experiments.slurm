@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-#SBATCH --job-name=learning_rate
-#SBATCH --output=logs/out_learning_rate.log
-#SBATCH --error=logs/err_learning_rate.log
+#SBATCH --job-name=maml
+#SBATCH --output=logs/out_maml.log
+#SBATCH --error=logs/err_maml.log
 #SBATCH -p gpu
 #SBATCH -N 1
 #SBATCH --mem=6G
@@ -41,4 +41,7 @@ conda activate metamod
 # bash task_modulation.sh $SLURM_ARRAY_TASK_ID
 
 # Learning learning rate 0-14 array
-bash learning_learning_rate.sh $SLURM_ARRAY_TASK_ID
+# bash learning_learning_rate.sh $SLURM_ARRAY_TASK_ID
+
+# Maml easy experiment 0-4 array
+bash maml_sweep.sh $SLURM_ARRAY_TASK_ID
