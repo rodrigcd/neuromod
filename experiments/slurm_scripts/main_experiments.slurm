@@ -8,7 +8,7 @@
 #SBATCH --mem=6G
 #SBATCH --time=0-18:00
 #SBATCH --gres=gpu:1  # this is important to use GPUs
-#SBATCH --array=0-14  #0-140 for single neuron
+#SBATCH --array=0-9  #0-140 for single neuron
 
 source /usr/share/modules/init/bash
 module load cuda/11.6
@@ -43,5 +43,5 @@ conda activate metamod
 # Learning learning rate 0-14 array
 # bash learning_learning_rate.sh $SLURM_ARRAY_TASK_ID
 
-# Maml easy experiment 0-4 array
+# Maml easy experiment 0-9 array
 bash maml_sweep.sh $SLURM_ARRAY_TASK_ID
