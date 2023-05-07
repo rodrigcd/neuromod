@@ -16,6 +16,7 @@ def maml_routine(**kwargs):
     n_steps = kwargs["n_steps"]
     eval_steps = kwargs["eval_steps"]
     save_weights_every = 20
+    save_grads_every = 100
     iter_control = kwargs["iter_control"]
     adam_lr = 0.005
     control_lr = adam_lr
@@ -142,8 +143,10 @@ def maml_routine(**kwargs):
     for i in tqdm(range(iter_control)):
         R, W1_grad, W2_grad = control.train_step(get_numpy=True, eval_on_test=optimize_test)
         cumulated_reward.append(R)
-        W1_control_grad.append(W1_grad)
-        W2_control_grad.append(W2_grad)
+        if i % save_grads_every == 0 or i == iter_control - 1:
+            W1_control_grad.append(W1_grad)
+            W2_control_grad.append(W2_grad)
+
     cumulated_reward = np.array(cumulated_reward).astype(float)
     results_dict["cumulated_reward_opt"] = cumulated_reward
     results_dict["W1_grad"] = W1_control_grad

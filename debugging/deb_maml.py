@@ -130,8 +130,11 @@ def main():
 
     for i in tqdm(range(iter_control)):
         R, grad = control.train_step(get_numpy=True, eval_on_test=optimize_test)
+        if i == 0:
+            mean_grad.append(grad)
         cumulated_reward.append(R)
-        mean_grad.append(grad)
+
+    mean_grad.append(grad)
     cumulated_reward = np.array(cumulated_reward).astype(float)
     results_dict["cumulated_reward_opt"] = cumulated_reward
 
