@@ -20,9 +20,9 @@ def main(argv):
     run_id = args["run_id"]
 
     iter_control = 1000
-    eval_steps = 500
-    skip_steps = 20
-    n_steps = np.arange(0, 301, skip_steps)
+    eval_steps = 8000
+    skip_steps = 50
+    n_steps = np.arange(0, 1001, skip_steps)
     n_steps[0] = 2
     print(n_steps)
 

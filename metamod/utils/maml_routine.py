@@ -6,6 +6,7 @@ import numpy as np
 import copy
 from tqdm import tqdm
 from functools import partialmethod
+from datetime import datetime
 
 
 def maml_routine(**kwargs):
@@ -16,7 +17,7 @@ def maml_routine(**kwargs):
     n_steps = kwargs["n_steps"]
     eval_steps = kwargs["eval_steps"]
     save_weights_every = 20
-    save_grads_every = 100
+    save_grads_every = 200
     iter_control = kwargs["iter_control"]
     adam_lr = 0.005
     control_lr = adam_lr
@@ -140,12 +141,15 @@ def maml_routine(**kwargs):
     W1_control_grad = []
     W2_control_grad = []
 
+    start_time = datetime.now()
     for i in tqdm(range(iter_control)):
         R, W1_grad, W2_grad = control.train_step(get_numpy=True, eval_on_test=optimize_test)
         cumulated_reward.append(R)
         if i % save_grads_every == 0 or i == iter_control - 1:
             W1_control_grad.append(W1_grad)
             W2_control_grad.append(W2_grad)
+    end_time = datetime.now()
+    results_dict["optimization_time"] = (end_time - start_time).total_seconds()
 
     cumulated_reward = np.array(cumulated_reward).astype(float)
     results_dict["cumulated_reward_opt"] = cumulated_reward
