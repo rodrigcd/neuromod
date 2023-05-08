@@ -32,11 +32,11 @@ class MNIST(BaseTask):
         self._transform_data()
 
     def _select_subset(self):
-        self.train_input_data = self.training_data.train_data.detach().cpu().numpy()
-        self.train_label_data = self.training_data.train_labels.detach().cpu().numpy()
+        self.train_input_data = self.training_data.data.detach().cpu().numpy()
+        self.train_label_data = self.training_data.targets.detach().cpu().numpy()
 
-        self.test_input_data = self.test_data.test_data.detach().cpu().numpy()
-        self.test_label_data = self.test_data.test_labels.detach().cpu().numpy()
+        self.test_input_data = self.test_data.data.detach().cpu().numpy()
+        self.test_label_data = self.test_data.targets.detach().cpu().numpy()
 
         if self.subsets is None:
             return

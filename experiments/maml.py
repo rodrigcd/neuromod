@@ -19,7 +19,7 @@ def main(argv):
     results_path = args["save_path"]
     run_id = args["run_id"]
 
-    iter_control = 500
+    iter_control = 1000
     eval_steps = 500
     skip_steps = 20
     n_steps = np.arange(0, 301, skip_steps)

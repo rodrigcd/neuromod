@@ -162,3 +162,12 @@ def maml_routine(**kwargs):
     results_dict["Loss_t_control_opt_test"] = Loss_t_opt_test
 
     return results_dict
+
+
+if __name__ == "__main__":
+    iter_control = 100
+    eval_steps = 100
+    steps = 20
+    results = maml_routine(n_steps=steps,
+                           eval_steps=eval_steps,
+                           iter_control=iter_control)

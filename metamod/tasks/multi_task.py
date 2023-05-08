@@ -45,3 +45,15 @@ class MultiTask(BaseTask):
             expected_x.append(expected_x_i)
             expected_y.append(expected_y_i)
         return input_corr, output_corr, input_output_corr, expected_y, expected_x
+
+    def get_best_possible_error(self, training=True):
+        min_loss = []
+        for dataset in self.datasets:
+            min_loss.append(dataset.get_best_possible_error(training=training))
+        return min_loss
+
+    def get_linear_regression_solution(self, reg_coef=0.0):
+        mapping = []
+        for dataset in self.datasets:
+            mapping.append(dataset.get_linear_regression_solution(reg_coef=reg_coef))
+        return mapping
