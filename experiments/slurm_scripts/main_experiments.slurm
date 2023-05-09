@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-#SBATCH --job-name=maml_long
-#SBATCH --output=logs/out_maml_long.log
-#SBATCH --error=logs/err_maml_long.log
+#SBATCH --job-name=lr_g
+#SBATCH --output=logs/out_lr_g.log
+#SBATCH --error=logs/err_lr_g.log
 #SBATCH -p gpu
 #SBATCH -N 1
 #SBATCH --mem=6G
