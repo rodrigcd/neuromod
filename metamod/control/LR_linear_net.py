@@ -65,7 +65,7 @@ class LRLinearNetControl(LinearNetEq):
         return dW1, dW2
 
     def control_cost(self, get_numpy=False):
-        cost = self.cost_coef * torch.sum((self.opt_lr - self.cost_offset) ** 2, dim=-1)
+        cost = self.cost_coef * (self.opt_lr - self.cost_offset) ** 2
         if get_numpy:
             return cost.detach().cpu().numpy()
         else:

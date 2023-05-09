@@ -76,7 +76,7 @@ def main(argv):
     control_params = {"control_lower_bound": -1.0,
                       "control_upper_bound": 1.0,
                       "gamma": 0.99,
-                      "cost_coef": 1e-4,  # 1e-8 for aux, 1e-5 for aux_even_larger
+                      "cost_coef": 0.1,  # 1e-8 for aux, 1e-5 for aux_even_larger
                       "reward_convertion": 1.0,
                       "init_opt_lr": None,
                       "control_lr": control_lr}  # 0.0005 for cost_coef 0

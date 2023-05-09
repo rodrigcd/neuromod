@@ -2,7 +2,7 @@ nvidia-smi
 python -c "import torch;print(torch.cuda.is_available())"
 
 cd ..
-experiment_path="learning_learning_rate"
+experiment_path="corrected_learning_rate"
 save_path="../results/$experiment_path/"
 echo $save_path
 

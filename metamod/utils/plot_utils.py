@@ -1056,6 +1056,190 @@ def task_modulation_plot(results, **plot_kwargs):
                   size=fontsize, weight='bold')
 
 
+def learning_rate_plot(manager_list, ax=None, **plot_kwargs):
+    fontsize = plot_kwargs["fontsize"]
+    line_width = plot_kwargs["line_width"]
+    skip_xlabel = plot_kwargs["skip_xlabel"]
+    label_in_title = plot_kwargs["label_in_title"]
+    subplot_labels = plot_kwargs["subplot_labels"]
+    x_lim = None
+    if "x_lim" in plot_kwargs.keys():
+        x_lim = plot_kwargs["x_lim"]
+
+    #############
+    # Loss plot #
+    #############
+    plot_index = 1
+    baseline_losses = []
+    control_losses = []
+    for i, results in enumerate(manager_list):
+        if i == 0:
+            iters = results.results["iters"]
+        baseline_losses.append(results.results["Loss_t_eq"])
+        control_losses.append(results.results["Loss_t_control_opt"])
+
+    mean_baseline_losses = np.mean(np.stack(baseline_losses, axis=0), axis=0)
+    mean_control_losses = np.mean(np.stack(control_losses, axis=0), axis=0)
+    std_baseline_losses = np.std(np.stack(baseline_losses, axis=0), axis=0)
+    std_control_losses = np.std(np.stack(control_losses, axis=0), axis=0)
+
+    ax[plot_index].plot(iters, mean_baseline_losses, 'k', lw=line_width, label="Baseline")
+    ax[plot_index].plot(iters, mean_control_losses, 'C0', lw=line_width, label="Controlled")
+    ax[plot_index].fill_between(iters, mean_baseline_losses - 2*std_baseline_losses, mean_baseline_losses + 2*std_baseline_losses,
+                    color='k', alpha=0.3)
+    ax[plot_index].fill_between(iters, mean_control_losses - 2*std_control_losses, mean_control_losses + 2*std_control_losses,
+                    color='C0', alpha=0.3)
+    if not skip_xlabel:
+        ax[plot_index].set_xlabel("Task time", fontsize=fontsize)
+    ax[plot_index].set_xlim(x_lim)
+    if label_in_title:
+        ax[plot_index].set_title(r"$\mathcal{L}(t)$", fontsize=fontsize)
+    else:
+        ax[plot_index].set_ylabel(r"$\mathcal{L}(t)$", fontsize=fontsize)
+    ax[plot_index].tick_params(axis='both', which='major', labelsize=fontsize-2)
+    ax[plot_index].spines[['right', 'top']].set_visible(False)
+    ax[plot_index].text(-0.15, 1.05, subplot_labels[plot_index], transform=ax[plot_index].transAxes,
+                  size=fontsize, weight='bold')
+
+    # ax[plot_index].legend(fontsize=fontsize - 2)
+
+    ###########################
+    # Net instant reward rate #
+    ###########################
+    plot_index = 0
+    baseline_r = []
+    control_r = []
+    for i, results in enumerate(manager_list):
+        if i == 0:
+            iters = results.results["iters"]
+        opt_lr = results.results["control_signal"].detach().cpu().numpy()
+        cost_coef = results.params["control_params"]["cost_coef"]
+        reward_conv = results.params["control_params"]["reward_convertion"]
+        control_cost = cost_coef * opt_lr ** 2
+        r_control = -reward_conv*results.results["Loss_t_control_opt"] - control_cost
+        r_base = -reward_conv*results.results["Loss_t_eq"]
+        baseline_r.append(r_base)
+        control_r.append(r_control)
+
+    mean_baseline_r = np.mean(np.stack(baseline_r, axis=0), axis=0)
+    mean_control_r = np.mean(np.stack(control_r, axis=0), axis=0)
+    std_baseline_r = np.std(np.stack(baseline_r, axis=0), axis=0)
+    std_control_r = np.std(np.stack(control_r, axis=0), axis=0)
+
+    ax[plot_index].plot(iters, mean_baseline_r, 'k', lw=line_width, label="Baseline")
+    ax[plot_index].plot(iters, mean_control_r, 'C0', lw=line_width, label="Control")
+    ax[plot_index].fill_between(iters, mean_baseline_r - 2*std_baseline_r, mean_baseline_r + 2*std_baseline_r,
+                    color='k', alpha=0.3)
+    ax[plot_index].fill_between(iters, mean_control_r - 2*std_control_r, mean_control_r + 2*std_control_r,
+                    color='C0', alpha=0.3)
+    ax[plot_index].set_xlim(x_lim)
+    ax[plot_index].legend(fontsize=fontsize-2, frameon=False)
+    if not skip_xlabel:
+        ax[plot_index].set_xlabel("Task time", fontsize=fontsize)
+    if label_in_title:
+        ax[plot_index].set_title(r"$v(t)$", fontsize=fontsize)
+    else:
+        ax[plot_index].set_ylabel(r"$v(t)$", fontsize=fontsize)
+    ax[plot_index].tick_params(axis='both', which='major', labelsize=fontsize-2)
+    ax[plot_index].spines[['right', 'top']].set_visible(False)
+    ax[plot_index].text(-0.15, 1.05, subplot_labels[plot_index], transform=ax[plot_index].transAxes,
+                  size=fontsize, weight='bold')
+    # ax[plot_index].text(.01, .99, '(a)', ha='left', va='top', transform=ax[plot_index].transAxes)
+
+    ###################
+    # Weight sparsity #
+    ###################
+    plot_index = 2
+    baseline_l1 = []
+    baseline_l2 = []
+    control_l1 = []
+    control_l2 = []
+    for i, results in enumerate(manager_list):
+        if i == 0:
+            iters = results.results["iters"]
+        W1_t, W2_t = results.results["W1_t_eq"], results.results["W2_t_eq"]
+        W1_control, W2_control = results.results["W1_t_control_opt"], results.results["W2_t_control_opt"]
+        base_l1, base_l2 = compute_all_weight_sparsity([W1_t, W2_t])
+        con_l1, con_l2 = compute_all_weight_sparsity([W1_control, W2_control])
+        baseline_l1.append(base_l1)
+        baseline_l2.append(base_l2)
+        control_l1.append(con_l1)
+        control_l2.append(con_l2)
+
+    baseline_l1 = np.mean(np.stack(baseline_l1, axis=0), axis=0)
+    baseline_l2 = np.mean(np.stack(baseline_l2, axis=0), axis=0)
+    control_l1 = np.mean(np.stack(control_l1, axis=0), axis=0)
+    control_l2 = np.mean(np.stack(control_l2, axis=0), axis=0)
+    ax[plot_index].plot(iters, baseline_l1, 'k', lw=line_width, label=r"Base $L1$")
+    ax[plot_index].plot(iters, control_l1, 'C0', lw=line_width, label=r"Ctrl $L1$")
+    ax[plot_index].plot(iters, baseline_l2, 'k--', lw=line_width, label=r"Base $L2$")
+    ax[plot_index].plot(iters, control_l2, 'C0--', lw=line_width, label=r"Ctrl $L2$")
+    ax[plot_index].set_xlim(x_lim)
+    ax[plot_index].legend(fontsize=fontsize-5, frameon=False)
+    ax[plot_index].set_xlabel("Task time", fontsize=fontsize)
+    if label_in_title:
+        ax[plot_index].set_title("Weight norms", fontsize=fontsize)
+    else:
+        ax[plot_index].set_ylabel("Weight norms", fontsize=fontsize)
+    ax[plot_index].tick_params(axis='both', which='major', labelsize=fontsize-2)
+    ax[plot_index].spines[['right', 'top']].set_visible(False)
+    ax[plot_index].text(-0.15, 1.05, subplot_labels[plot_index], transform=ax[plot_index].transAxes,
+                  size=fontsize, weight='bold')
+
+    ################
+    # Control Size #
+    ################
+    plot_index = 3
+    normalize = True
+    base_loss_der = []
+    ctrl_loss_der = []
+    G1_size = []
+    G2_size = []
+    for i, results in enumerate(manager_list):
+        if i == 0:
+            iters = results.results["iters"]
+        G1_tilda, G2_tilda = results.results["control_signal"]
+        G1_tilda, G2_tilda = G1_tilda.detach().cpu().numpy(), G2_tilda.detach().cpu().numpy()
+        G1_t = G1_tilda - np.ones(G1_tilda.shape)
+        G2_t = G2_tilda - np.ones(G2_tilda.shape)
+        _, G1_norm = compute_weight_sparsity(G1_t)
+        _, G2_norm = compute_weight_sparsity(G2_t)
+        G1_size.append(G1_norm)
+        G2_size.append(G2_norm)
+        b_der_loss = np.diff(results.results["Loss_t_eq"])
+        c_der_loss = np.diff(results.results["Loss_t_control_opt"])
+        b_der_loss = np.concatenate([b_der_loss, (b_der_loss[-1],)])
+        c_der_loss = np.concatenate([c_der_loss, (c_der_loss[-1],)])
+        base_loss_der.append(b_der_loss)
+        ctrl_loss_der.append(c_der_loss)
+
+    base_loss_der = np.mean(np.stack(base_loss_der, axis=0), axis=0)
+    ctrl_loss_der = np.mean(np.stack(ctrl_loss_der, axis=0), axis=0)
+    G1_size = np.mean(np.stack(G1_size, axis=0), axis=0)
+    G2_size = np.mean(np.stack(G2_size, axis=0), axis=0)
+    if normalize:
+        base_loss_der = -base_loss_der / np.max(np.abs(base_loss_der))
+        ctrl_loss_der = -ctrl_loss_der / np.max(np.abs(ctrl_loss_der))
+        G1_size = G1_size / np.max(np.abs(G1_size))
+        G2_size = G2_size / np.max(np.abs(G2_size))
+    ax[plot_index].plot(iters, base_loss_der, 'k', lw=line_width, label=r"Base $d\mathcal{L}/dt$")
+    ax[plot_index].plot(iters, ctrl_loss_der, 'C0', lw=line_width, label=r"Ctrl $d\mathcal{L}/dt$")
+    ax[plot_index].plot(iters, G1_size, 'C2--', lw=line_width-1, label=r"$G_1(t)$ size")
+    ax[plot_index].plot(iters, G2_size, 'C3--', lw=line_width-1, label=r"$G_2(t)$ size")
+    ax[plot_index].set_xlim(x_lim)
+    ax[plot_index].legend(fontsize=fontsize-5, frameon=False)
+    ax[plot_index].set_xlabel("Task time", fontsize=fontsize)
+    if label_in_title:
+        ax[plot_index].set_title("Normalized unit", fontsize=fontsize)
+    else:
+        ax[plot_index].set_ylabel("Normalized unit", fontsize=fontsize)
+    ax[plot_index].tick_params(axis='both', which='major', labelsize=fontsize-2)
+    ax[plot_index].spines[['right', 'top']].set_visible(False)
+    ax[plot_index].text(-0.15, 1.05, subplot_labels[plot_index], transform=ax[plot_index].transAxes,
+                  size=fontsize, weight='bold')
+
+    return ax
+
 def compute_control_cost(G1_t, G2_t=None, cost_coef=0.3):
     if G2_t is None:
         control_cost = np.exp(cost_coef * (np.sum(G1_t ** 2, axis=(-1, -2)))) - 1
