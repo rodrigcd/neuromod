@@ -9,3 +9,4 @@ from .appendix_plots import two_layer_parameters_plot, non_linear_network_plots,
 from .appendix_plots import sliding_window
 from .utils import detach_torch
 from .maml_routine import maml_routine
+from .plot_utils import learning_rate_plot
