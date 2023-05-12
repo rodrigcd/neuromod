@@ -1,14 +1,14 @@
 #!/bin/bash
 #
-#SBATCH --job-name=lr_g
-#SBATCH --output=logs/out_lr_g.log
-#SBATCH --error=logs/err_lr_g.log
+#SBATCH --job-name=hr_maml
+#SBATCH --output=logs/out_hr_maml.log
+#SBATCH --error=logs/err_hr_maml.log
 #SBATCH -p gpu
 #SBATCH -N 1
 #SBATCH --mem=6G
-#SBATCH --time=0-18:00
+#SBATCH --time=0-24:00
 #SBATCH --gres=gpu:1  # this is important to use GPUs
-#SBATCH --array=0-14  #0-140 for single neuron
+#SBATCH --array=0-9  #0-140 for single neuron
 
 source /usr/share/modules/init/bash
 module load cuda/11.6
@@ -41,7 +41,7 @@ conda activate metamod
 # bash task_modulation.sh $SLURM_ARRAY_TASK_ID
 
 # Learning learning rate 0-14 array
-bash learning_learning_rate.sh $SLURM_ARRAY_TASK_ID
+# bash learning_learning_rate.sh $SLURM_ARRAY_TASK_ID
 
 # Maml easy experiment 0-9 array
-# bash maml_sweep.sh $SLURM_ARRAY_TASK_ID
+bash maml_sweep.sh $SLURM_ARRAY_TASK_ID
