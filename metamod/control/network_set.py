@@ -7,10 +7,13 @@ class NetworkSetEq(object):
 
     def __init__(self, network_class: LinearNetEq, in_out_cov, in_cov, out_cov, init_weights, reg_coef,
                  intrinsic_noise, learning_rate=1e-5, n_steps=10000, time_constant=1.0,
-                 in_out_cov_test=None, in_cov_test=None, out_cov_test=None, optimize_init_weights=False):
+                 in_out_cov_test=None, in_cov_test=None, out_cov_test=None, optimize_init_weights=False,
+                 datasets=None):
 
         self.n_networks = len(in_out_cov)
         self.networks = []
+        self.datasets = datasets
+
         for i in range(self.n_networks):
             self.networks.append(network_class(in_out_cov[i], in_cov[i], out_cov[i], init_weights, reg_coef,
                                                intrinsic_noise, learning_rate, n_steps, time_constant,
@@ -21,7 +24,11 @@ class NetworkSetEq(object):
         W1_t = []
         W2_t = []
         for i in range(self.n_networks):
-            W1_t_i, W2_t_i = self.networks[i].get_weights(time_span, get_numpy=get_numpy)
+            if self.datasets is None:
+                W1_t_i, W2_t_i = self.networks[i].get_weights(time_span, get_numpy=get_numpy)
+            else:
+                W1_t_i, W2_t_i = self.networks[i].get_weights(time_span, get_numpy=get_numpy,
+                                                               dataset_sampler=self.datasets[i])
             W1_t.append(W1_t_i)
             W2_t.append(W2_t_i)
         if get_numpy:
@@ -35,8 +42,13 @@ class NetworkSetEq(object):
     def get_loss_function(self, W1, W2, get_numpy=False, use_test=False):
         Loss_t = []
         for i in range(self.n_networks):
-            Loss_t_i = self.networks[i].get_loss_function(W1[i, :, :, :], W2[i, :, :, :],
-                                                          get_numpy=get_numpy, use_test=use_test)
+            if self.datasets is None:
+                Loss_t_i = self.networks[i].get_loss_function(W1[i, :, :, :], W2[i, :, :, :],
+                                                              get_numpy=get_numpy, use_test=use_test)
+            else:
+                Loss_t_i = self.networks[i].get_loss_function(W1[i, :, :, :], W2[i, :, :, :],
+                                                              get_numpy=get_numpy, use_test=use_test,
+                                                              dataset_sampler=self.datasets[i])
             Loss_t.append(Loss_t_i)
         if get_numpy:
             Loss_t = np.stack(Loss_t, axis=0)
@@ -51,7 +63,7 @@ class NetworkSetControl(NetworkSetEq):
                  intrinsic_noise, learning_rate=1e-5, n_steps=10000, time_constant=1.0,
                  in_out_cov_test=None, in_cov_test=None, out_cov_test=None,
                  control_lower_bound=0.0, control_upper_bound=0.5, init_g=None, gamma=0.99, cost_coef=0.3,
-                 reward_convertion=1.0, control_lr=1e-4):
+                 reward_convertion=1.0, control_lr=1e-4, datasets=None):
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.dtype = torch.float32
@@ -60,7 +72,8 @@ class NetworkSetControl(NetworkSetEq):
 
         super().__init__(network_class, in_out_cov, in_cov, out_cov, (self.W1_0, self.W2_0), reg_coef,
                          intrinsic_noise, learning_rate, n_steps, time_constant,
-                         in_out_cov_test, in_cov_test, out_cov_test, optimize_init_weights=True)
+                         in_out_cov_test, in_cov_test, out_cov_test, optimize_init_weights=True,
+                         datasets=datasets)
 
         self.control_upper_bound = control_upper_bound
         self.control_lower_bound = control_lower_bound

@@ -41,16 +41,24 @@ class LinearNetEq(object):
         self.dt = learning_rate
         self.time_span = torch.from_numpy(time_span).requires_grad_(False).type(self.dtype).to(self.device)
 
-    def weight_der(self, t, W1, W2, t_index=None):
+    def weight_der(self, t, W1, W2, t_index=None, dataset_sampler=None):
         if t_index is None:
             t_index = (self.time_span == t).nonzero(as_tuple=True)[0][0]
 
-        dW1 = (W2.T @ (self.in_out_cov.T - W2 @ W1 @ self.in_cov) - self.reg_coef * W1)/self.time_constant
-        dW2 = ((self.in_out_cov.T - W2 @ W1 @ self.in_cov) @ W1.T - self.reg_coef * W2)/self.time_constant
+        if dataset_sampler is not None:
+            x, y = dataset_sampler.sample_batch(tensor_mode=True)
+            # x, y = torch.tensor(x, dtype=self.dtype).to(self.device), torch.tensor(y, dtype=self.dtype).to(self.device)
+            est_in_cov = (x.T @ x)/x.shape[0]
+            est_in_out_cov = (x.T @ y)/x.shape[0]
+            dW1 = (W2.T @ (est_in_out_cov.T - W2 @ W1 @ est_in_cov) - self.reg_coef * W1)/self.time_constant
+            dW2 = ((est_in_out_cov.T - W2 @ W1 @ est_in_cov) @ W1.T - self.reg_coef * W2)/self.time_constant
+        else:
+            dW1 = (W2.T @ (self.in_out_cov.T - W2 @ W1 @ self.in_cov) - self.reg_coef * W1)/self.time_constant
+            dW2 = ((self.in_out_cov.T - W2 @ W1 @ self.in_cov) @ W1.T - self.reg_coef * W2)/self.time_constant
 
         return dW1, dW2
 
-    def get_weights(self, time_span, W1_0=None, W2_0=None, get_numpy=False):
+    def get_weights(self, time_span, W1_0=None, W2_0=None, get_numpy=False, dataset_sampler=None):
         if W1_0 is None or W2_0 is None:
             W1_0 = self.W1_init
             W2_0 = self.W2_init
@@ -65,7 +73,7 @@ class LinearNetEq(object):
         W1_t.append(current_W1)
         W2_t.append(current_W2)
         for i, t in enumerate(time_span[:-1]):
-            dW1, dW2 = self.weight_der(t, current_W1, current_W2, t_index=i)
+            dW1, dW2 = self.weight_der(t, current_W1, current_W2, t_index=i, dataset_sampler=dataset_sampler)
             current_W1 = dW1 * self.dt + current_W1
             current_W2 = dW2 * self.dt + current_W2
             W1_t.append(current_W1)
@@ -77,20 +85,33 @@ class LinearNetEq(object):
         else:
             return W1_t, W2_t
 
-    def get_loss_function(self, W1, W2, get_numpy=False, use_test=False):
+    def get_loss_function(self, W1, W2, get_numpy=False, use_test=False, dataset_sampler=None):
         W_t = W2 @ W1
         if isinstance(W_t, np.ndarray):
             W_t = torch.from_numpy(W_t).type(self.dtype).to(self.device)
             W2 = torch.from_numpy(W2).type(self.dtype).to(self.device)
             W1 = torch.from_numpy(W1).type(self.dtype).to(self.device)
-        if use_test:
-            L1 = 0.5*(torch.trace(self.out_cov_test) - torch.diagonal(2*self.in_out_cov_test @ W_t, dim1=-2, dim2=-1).sum(-1)
-                          + torch.diagonal(self.in_cov_test @ torch.transpose(W_t, dim0=-1, dim1=-2) @ W_t,
-                                           dim1=-2, dim2=-1).sum(-1)) + 0.5*W_t.shape[1]*self.intrinsic_noise**2
+
+        if dataset_sampler is not None:
+            x, y = dataset_sampler.sample_batch(training=not use_test, tensor_mode=True)
+            # x, y = torch.tensor(x, dtype=self.dtype).to(self.device), torch.tensor(y, dtype=self.dtype).to(self.device)
+            in_cov = (x.T @ x)/x.shape[0]
+            in_out_cov = (x.T @ y)/x.shape[0]
+            out_cov = (y.T @ y)/x.shape[0]
         else:
-            L1 = 0.5*(torch.trace(self.out_cov) - torch.diagonal(2*self.in_out_cov @ W_t, dim1=-2, dim2=-1).sum(-1)
-                              + torch.diagonal(self.in_cov @ torch.transpose(W_t, dim0=-1, dim1=-2) @ W_t,
-                                               dim1=-2, dim2=-1).sum(-1)) + 0.5*W_t.shape[1]*self.intrinsic_noise**2
+            if use_test:
+                out_cov = self.out_cov_test
+                in_out_cov = self.in_out_cov_test
+                in_cov = self.in_cov_test
+            else:
+                out_cov = self.out_cov
+                in_out_cov = self.in_out_cov
+                in_cov = self.in_cov
+
+        L1 = 0.5*(torch.trace(out_cov) - torch.diagonal(2*in_out_cov @ W_t, dim1=-2, dim2=-1).sum(-1)
+                      + torch.diagonal(in_cov @ torch.transpose(W_t, dim0=-1, dim1=-2) @ W_t,
+                                       dim1=-2, dim2=-1).sum(-1)) + 0.5*W_t.shape[1]*self.intrinsic_noise**2
+
         L2 = (self.reg_coef/2.0)*(torch.sum(W1**2, (-1, -2)) + torch.sum(W2**2, (-1, -2)))
         L = L1 + L2
         if get_numpy:
