@@ -11,12 +11,11 @@ import torch
 class MNIST(BaseTask):
 
     def __init__(self, batch_size=32, subset=(1, 7, 3), new_shape=None, affine_data=True,
-                 training_mode=True, tensor_mode=False):
+                 training_mode=True):
         self.batch_size = batch_size
         self.new_shape = new_shape
         self.affine_data = affine_data
         self.training_mode = training_mode
-        self.tensor_mode = tensor_mode
         mnist_data_path = os.path.join(metamod.__path__[0], "tasks/data_mnist")
 
         self.training_data = datasets.MNIST(

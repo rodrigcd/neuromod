@@ -19,6 +19,7 @@ def maml_routine(**kwargs):
     save_weights_every = 20
     save_grads_every = 200
     iter_control = kwargs["iter_control"]
+    sample_dataset = kwargs["sample_dataset"]
     adam_lr = 0.005
     control_lr = adam_lr
 
@@ -112,6 +113,8 @@ def maml_routine(**kwargs):
                        "learning_rate": model_params["network_params"]["learning_rate"],
                        "time_constant": 1.0}
 
+    #if sample_dataset:
+
     solver = NetworkSetEq(**equation_params)
 
     W1_t, W2_t = solver.get_weights(time_span, get_numpy=True)
@@ -145,9 +148,9 @@ def maml_routine(**kwargs):
     for i in tqdm(range(iter_control)):
         R, W1_grad, W2_grad = control.train_step(get_numpy=True, eval_on_test=optimize_test)
         cumulated_reward.append(R)
-        if i % save_grads_every == 0 or i == iter_control - 1:
-            W1_control_grad.append(W1_grad)
-            W2_control_grad.append(W2_grad)
+        # if i % save_grads_every == 0 or i == iter_control - 1:
+        #     W1_control_grad.append(W1_grad)
+        #     W2_control_grad.append(W2_grad)
     end_time = datetime.now()
     results_dict["optimization_time"] = (end_time - start_time).total_seconds()
 

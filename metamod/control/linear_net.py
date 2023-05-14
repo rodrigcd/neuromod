@@ -181,7 +181,7 @@ class LinearNetControl(LinearNetEq):
         g_tilda = cal1 + g
         return g, g_tilda
 
-    def weight_der(self, t, W1, W2, t_index=None):
+    def weight_der(self, t, W1, W2, t_index=None, dataset_sampler=None):
         if t_index is None:
             t_index = (self.time_span == t).nonzero(as_tuple=True)[0][0]
 
@@ -191,25 +191,45 @@ class LinearNetControl(LinearNetEq):
         W1_tilda = W1 * g1_tilda
         W2_tilda = W2 * g2_tilda
 
-        dW1 = ((W2_tilda.T @ (self.in_out_cov.T - W2_tilda @ W1_tilda @ self.in_cov)) * g1_tilda - self.reg_coef * W1)/self.time_constant
-        dW2 = (((self.in_out_cov.T - W2_tilda @ W1_tilda @ self.in_cov) @ W1_tilda.T) * g2_tilda - self.reg_coef * W2)/self.time_constant
+        if dataset_sampler is not None:
+            x, y = dataset_sampler.sample_batch(tensor_mode=True)
+            in_cov = (x.T @ x)/x.shape[0]
+            in_out_cov = (x.T @ y)/x.shape[0]
+        else:
+            in_out_cov = self.in_out_cov
+            in_cov = self.in_cov
+
+        dW1 = ((W2_tilda.T @ (in_out_cov.T - W2_tilda @ W1_tilda @ in_cov)) * g1_tilda - self.reg_coef * W1)/self.time_constant
+        dW2 = (((in_out_cov.T - W2_tilda @ W1_tilda @ in_cov) @ W1_tilda.T) * g2_tilda - self.reg_coef * W2)/self.time_constant
 
         return dW1, dW2
 
-    def get_loss_function(self, W1, W2, get_numpy=False, use_test=False):
+    def get_loss_function(self, W1, W2, get_numpy=False, use_test=False, dataset_sampler=None):
         if isinstance(W1, np.ndarray):
             W2 = torch.from_numpy(W2).type(self.dtype).to(self.device)
             W1 = torch.from_numpy(W1).type(self.dtype).to(self.device)
 
         W_t = (W2 * self.g2_tilda) @ (W1 * self.g1_tilda)
-        if use_test:
-            L1 = 0.5*(torch.trace(self.out_cov_test) - torch.diagonal(2*self.in_out_cov_test @ W_t, dim1=-2, dim2=-1).sum(-1)
-                            + torch.diagonal(self.in_cov_test @ torch.transpose(W_t, dim0=-1, dim1=-2) @ W_t,
-                                            dim1=-2, dim2=-1).sum(-1)) + 0.5*W_t.shape[1]*self.intrinsic_noise**2
+
+        if dataset_sampler is not None:
+            x, y = dataset_sampler.sample_batch(training=not use_test, tensor_mode=True)
+            # x, y = torch.tensor(x, dtype=self.dtype).to(self.device), torch.tensor(y, dtype=self.dtype).to(self.device)
+            in_cov = (x.T @ x) / x.shape[0]
+            in_out_cov = (x.T @ y) / x.shape[0]
+            out_cov = (y.T @ y) / x.shape[0]
         else:
-            L1 = 0.5*(torch.trace(self.out_cov) - torch.diagonal(2*self.in_out_cov @ W_t, dim1=-2, dim2=-1).sum(-1)
-                              + torch.diagonal(self.in_cov @ torch.transpose(W_t, dim0=-1, dim1=-2) @ W_t,
-                                               dim1=-2, dim2=-1).sum(-1)) + 0.5*W_t.shape[1]*self.intrinsic_noise**2
+            if use_test:
+                out_cov = self.out_cov_test
+                in_out_cov = self.in_out_cov_test
+                in_cov = self.in_cov_test
+            else:
+                out_cov = self.out_cov
+                in_out_cov = self.in_out_cov
+                in_cov = self.in_cov
+
+        L1 = 0.5 * (torch.trace(out_cov) - torch.diagonal(2 * in_out_cov @ W_t, dim1=-2, dim2=-1).sum(-1)
+                    + torch.diagonal(in_cov @ torch.transpose(W_t, dim0=-1, dim1=-2) @ W_t,
+                                     dim1=-2, dim2=-1).sum(-1)) + 0.5 * W_t.shape[1] * self.intrinsic_noise ** 2
         L2 = (self.reg_coef/2.0)*(torch.sum(W1**2, (-1, -2)) + torch.sum(W2**2, (-1, -2)))
         L = L1 + L2
         if get_numpy:
@@ -245,12 +265,13 @@ class LinearNetControl(LinearNetEq):
         else:
             return self.time_span
 
-    def train_step(self, get_numpy=False, lr=None, eval_on_test=False):
+    def train_step(self, get_numpy=False, lr=None, eval_on_test=False, dataset_sampler=None):
         if lr is None:
             lr = self.control_lr
 
-        W1_t_control, W2_t_control = self.get_weights(self.time_span)
-        L_t = self.get_loss_function(W1=W1_t_control, W2=W2_t_control, use_test=eval_on_test)
+        W1_t_control, W2_t_control = self.get_weights(self.time_span, dataset_sampler=dataset_sampler)
+        L_t = self.get_loss_function(W1=W1_t_control, W2=W2_t_control, use_test=eval_on_test,
+                                     dataset_sampler=dataset_sampler)
         C_t = self.control_cost()
 
         instant_reward_rate = self.gamma**(self.time_span)*(-self.reward_convertion*L_t-C_t)

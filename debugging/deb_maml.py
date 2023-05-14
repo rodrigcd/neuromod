@@ -13,25 +13,21 @@ def main():
     run_name = "deb_maml"
     results_path = "../results"
     results_dict = {}
-    n_steps = 15000
+    n_steps = 300
     save_weights_every = 20
-    iter_control = 100
+    iter_control = 1500
     adam_lr = 0.005
-    batch_size = 1024
-    tensor_mode = True
+    batch_size = 16
 
     dataset_params1 = {"batch_size": batch_size,
                        "new_shape": (5, 5),
-                       "subset": (0, 1),
-                       "tensor_mode": tensor_mode}
+                       "subset": (0, 1)}
     dataset_params2 = {"batch_size": batch_size,
                        "new_shape": (5, 5),
-                       "subset": (7, 1),
-                       "tensor_mode": tensor_mode}
+                       "subset": (7, 1)}
     dataset_params3 = {"batch_size": batch_size,
                        "new_shape": (5, 5),
-                       "subset": (8, 9),
-                       "tensor_mode": tensor_mode}
+                       "subset": (8, 9)}
     dataset_params = {"dataset_classes": (MNIST, MNIST, MNIST),
                       "dataset_list_params": (dataset_params1, dataset_params2, dataset_params3)}
 
@@ -115,8 +111,9 @@ def main():
     end = datetime.now()
     print("approx_solver time: ", end - start)
 
-    equation_params["datasets"] = None
-    real_solver = NetworkSetEq(**equation_params)
+    real_equation_params = copy.deepcopy(equation_params)
+    real_equation_params["datasets"] = None
+    real_solver = NetworkSetEq(**real_equation_params)
 
     start = datetime.now()
     W1_t_real, W2_t_real = real_solver.get_weights(time_span, get_numpy=True)
@@ -125,40 +122,41 @@ def main():
     end = datetime.now()
     print("real_solver time: ", end - start)
 
-    plt.plot(np.mean(Loss_t, axis=0), label="approx_solver")
-    plt.plot(np.mean(Loss_t_real, axis=0), label="real_solver")
+    #plt.plot(np.mean(Loss_t, axis=0), label="approx_solver")
+    #plt.plot(np.mean(Loss_t_real, axis=0), label="real_solver")
+    #plt.legend()
+    #plt.show()
+
+    results_dict["W1_t_eq"] = W1_t
+    results_dict["W2_t_eq"] = W2_t
+    results_dict["Loss_t_eq"] = Loss_t
+    results_dict["Loss_t_eq_test"] = Loss_t_test
+
+    # Initialize control
+    control_params = {**control_params, **copy.deepcopy(equation_params)}
+    control = NetworkSetControl(**control_params)
+
+    real_control_params = {**control_params, **copy.deepcopy(real_equation_params)}
+    real_control = NetworkSetControl(**real_control_params)
+
+    control_params["iters_control"] = iter_control
+    cumulated_reward = []
+    mean_grad = []
+    for i in tqdm(range(iter_control)):
+        R, grad, _ = control.train_step(get_numpy=True, eval_on_test=optimize_test)
+        cumulated_reward.append(R)
+
+    real_cumulated_reward = []
+    mean_grad = []
+    for i in tqdm(range(iter_control)):
+        R, grad, _ = real_control.train_step(get_numpy=True, eval_on_test=optimize_test)
+        real_cumulated_reward.append(R)
+
+    plt.plot(cumulated_reward, label="approx_solver")
+    plt.plot(real_cumulated_reward, label="real_solver")
     plt.legend()
     plt.show()
 
-    # results_dict["W1_t_eq"] = W1_t
-    # results_dict["W2_t_eq"] = W2_t
-    # results_dict["Loss_t_eq"] = Loss_t
-    # results_dict["Loss_t_eq_test"] = Loss_t_test
-    #
-    # # Initialize control
-    # control_params = {**control_params, **copy.deepcopy(equation_params)}
-    # control = NetworkSetControl(**control_params)
-    #
-    # W1_t_control, W2_t_control = control.get_weights(time_span, get_numpy=True)
-    # Loss_t_control = control.get_loss_function(W1_t_control, W2_t_control, get_numpy=True)
-    # Loss_t_control_test = control.get_loss_function(W1_t, W2_t, get_numpy=True, use_test=True)
-    #
-    # results_dict["W1_t_control_init"] = W1_t_control
-    # results_dict["W2_t_control_init"] = W2_t_control
-    # results_dict["Loss_t_control_init"] = Loss_t_control
-    # results_dict["Loss_t_control_init_test"] = Loss_t_control_test
-    # results_dict["control_signal_init"] = (control.W1_0, control.W2_0)
-    #
-    # control_params["iters_control"] = iter_control
-    # cumulated_reward = []
-    # mean_grad = []
-    #
-    # for i in tqdm(range(iter_control)):
-    #     R, grad = control.train_step(get_numpy=True, eval_on_test=optimize_test)
-    #     if i == 0:
-    #         mean_grad.append(grad)
-    #     cumulated_reward.append(R)
-    #
     # mean_grad.append(grad)
     # cumulated_reward = np.array(cumulated_reward).astype(float)
     # results_dict["cumulated_reward_opt"] = cumulated_reward

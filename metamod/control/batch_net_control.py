@@ -9,7 +9,7 @@ class BatchNetworkControl(object):
 
     def __init__(self, network: NonLinearNet, task: BaseTask, inner_loop_iters=6000, outer_loop_iters=50, gamma=0.99,
                  control_lower_bound=-1.0, control_upper_bound=1.0, cost_coef=0.3, reward_convertion=1.0,
-                 control_lr = 1.0, init_g = None):
+                 control_lr=1.0, init_g=None):
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.dtype = torch.float32
@@ -65,7 +65,7 @@ class BatchNetworkControl(object):
 
     def get_loss_function(self, get_numpy=False):
         L_t = []
-        self.task.set_random_seed(0)
+        # self.task.set_random_seed(0)
         for i in range(self.inner_loop_iters):
             loss = self.inner_loop(t_index=i)
             L_t.append(loss)
@@ -110,12 +110,12 @@ class BatchNetworkControl(object):
         # self.g2, self.g2_tilda = self._update_g(self.g2, lr=lr)
 
         self.net.reset_weights()
-        self.task.set_random_seed(0)
+        # self.task.set_random_seed(0)
 
         if get_numpy:
-            return -cumulated_R.detach().cpu().numpy()
+            return cumulated_R.detach().cpu().numpy()
         else:
-            return -cumulated_R
+            return cumulated_R
 
     # def _update_g(self, g, lr):
 
