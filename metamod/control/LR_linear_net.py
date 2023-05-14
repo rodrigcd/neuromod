@@ -56,7 +56,7 @@ class LRLinearNetControl(LinearNetEq):
         opt_lr_tilda = cal1 + opt_lr
         return opt_lr, opt_lr_tilda
 
-    def weight_der(self, t, W1, W2, t_index=None):
+    def weight_der(self, t, W1, W2, t_index=None, dataset_sampler=None):
         if t_index is None:
             t_index = (self.time_span == t).nonzero(as_tuple=True)[0][0]
 
