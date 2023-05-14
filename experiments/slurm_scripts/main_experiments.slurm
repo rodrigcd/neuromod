@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-#SBATCH --job-name=hr_maml
-#SBATCH --output=logs/out_hr_maml.log
-#SBATCH --error=logs/err_hr_maml.log
+#SBATCH --job-name=sweep_lr
+#SBATCH --output=logs/out_sweep_lr.log
+#SBATCH --error=logs/err_sweep_lr.log
 #SBATCH -p gpu
 #SBATCH -N 1
 #SBATCH --mem=6G
