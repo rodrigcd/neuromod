@@ -100,6 +100,7 @@ def main(argv):
                       "cost_coef": cost_coef,  # 1e-8 for aux, 1e-5 for aux_even_larger
                       "reward_convertion": 1.0,
                       "init_opt_lr": None,
+                      "cost_offset": cost_offset,
                       "control_lr": control_lr}  # 0.0005 for cost_coef 0
 
     dataset = dataset_class(**dataset_params)
@@ -146,8 +147,7 @@ def main(argv):
                        "reg_coef": model_params["reg_coef"],
                        "intrinsic_noise": model_params["intrinsic_noise"],
                        "learning_rate": model_params["learning_rate"],
-                       "time_constant": 1.0,
-                       "cost_offset": cost_offset}
+                       "time_constant": 1.0}
 
     solver = LinearNetEq(**equation_params)
 
