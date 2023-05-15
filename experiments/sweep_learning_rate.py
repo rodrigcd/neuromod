@@ -33,7 +33,7 @@ def main(argv):
     args["optimize_test"] = False
     n_params = args["n_params"]
 
-    gammas = 10 ** (np.linspace(-8, 0, n_params, endpoint=True))
+    gammas = np.linspace(0.6, 1.0, n_params, endpoint=True) #10 ** (np.linspace(-8, 0, n_params, endpoint=True))
     betas = np.linspace(1e-3, 2, n_params, endpoint=True)
 
     if args["run_id"] < n_params:

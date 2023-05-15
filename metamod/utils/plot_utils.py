@@ -721,7 +721,12 @@ def single_neuron_param_plot(result_dict, **plot_kwargs):
                 ax[0, i].plot(iters[j], control[j].g.detach().cpu().numpy()[:, 0, 0], c=colors[j], lw=line_width)
         ax[0, i].set_xlim(x_lim_vars[i])
         ax[0, i].spines[['right', 'top']].set_visible(False)
-        ax[0, i].legend(fontsize=fontsize, frameon=False)
+        if "weight_legend_pos" in plot_kwargs.keys():
+            ax[0, i].legend(fontsize=fontsize - 3, frameon=False,
+                                  loc="upper center",
+                                  bbox_to_anchor=plot_kwargs["weight_legend_pos"])
+        else:
+            ax[0, i].legend(fontsize=fontsize - 3, frameon=False)
         ax[0, 0].set_ylabel(r"Optimal $g(t)$", fontsize=fontsize)
         ax[0, i].tick_params(axis='both', which='major', labelsize=fontsize - 2)
         ax[0, i].text(-0.15, 1.05, subplot_labels[0, i], transform=ax[0, i].transAxes,
