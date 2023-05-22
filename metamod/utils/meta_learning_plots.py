@@ -55,15 +55,18 @@ def plot_maml_results(ax, maml_pre_processed, **plot_kwargs):
     ax[0].set_ylabel("MAML loss", fontsize=fontsize)
     ax[0].tick_params(axis='both', which='major', labelsize=fontsize-2)
     ax[0].spines[['right', 'top']].set_visible(False)
-    if "weight_legend_pos" in plot_kwargs.keys():
-        ax[0].legend(fontsize=fontsize - 5, frameon=False,
-                              loc="upper left",
-                              bbox_to_anchor=plot_kwargs["weight_legend_pos"],
-                              handletextpad=plot_kwargs["handletextpad"])
-    else:
-        ax[0].legend(fontsize=fontsize - 4, frameon=False)
     ax[0].text(-0.15, 1.1, subplot_labels[0], transform=ax[0].transAxes,
                   size=fontsize, weight='bold')
+    if "disable_legend" in plot_kwargs.keys():
+        if plot_kwargs["disable_legend"]:
+            return ax
+    if "weight_legend_pos" in plot_kwargs.keys():
+        ax[0].legend(fontsize=fontsize - 5, frameon=False,
+                     loc="upper left",
+                     bbox_to_anchor=plot_kwargs["weight_legend_pos"],
+                     handletextpad=plot_kwargs["handletextpad"])
+    else:
+        ax[0].legend(fontsize=fontsize - 4, frameon=False)
     return ax
 
 
@@ -96,5 +99,56 @@ def plot_optimal_lr(ax, spec_path_list, var_sweep, var_label, **plot_kwargs):
                   size=fontsize, weight='bold')
     ax.tick_params(axis='both', which='major', labelsize=fontsize-2)
     ax.spines[['right', 'top']].set_visible(False)
+    print(plot_kwargs.keys())
+    print("disable_legend" in plot_kwargs.keys())
+    if "weight_legend_pos" in plot_kwargs.keys():
+        ax.legend(fontsize=fontsize - 5, frameon=False,
+                              loc="upper left",
+                              bbox_to_anchor=plot_kwargs["weight_legend_pos"])
+    else:
+        ax.legend(fontsize=fontsize - 4, frameon=False)
+    if "disable_legend" in plot_kwargs.keys():
+        ax.get_legend().remove()
+        return ax
+    return ax
 
+
+def plot_optimal_lr_loss(ax, spec_path_list, var_sweep, var_label, **plot_kwargs):
+    fontsize = plot_kwargs["fontsize"]
+    line_width = plot_kwargs["line_width"]
+    subplot_labels = plot_kwargs["subplot_labels"]
+    y_label = plot_kwargs["y_label"]
+
+    optimal_loss = []
+    for i, spec_path in enumerate(spec_path_list):
+        results = ResultsManager(spec_path, verbose=False)
+        if i == 0:
+            base_lr = results.params["model_params"]["learning_rate"]
+        loss = results.results["Loss_t_control_opt"]
+        optimal_loss.append(loss)
+
+    colors = cm.viridis(np.linspace(0, 1, len(var_sweep)))
+    for i, loss in enumerate(optimal_loss):
+        if i == 0 or i == len(optimal_loss) - 1:
+            ax.plot(loss, color=colors[i], lw=line_width, label=var_label+"="+str(var_sweep[i]))
+        else:
+            ax.plot(loss, color=colors[i], lw=line_width)
+
+    ax.set_xlabel("Task time", fontsize=fontsize)
+    if y_label is not None:
+        ax.set_ylabel(y_label, fontsize=fontsize)
+    ax.legend(fontsize=fontsize - 5, frameon=False)
+    ax.text(-0.15, 1.1, subplot_labels, transform=ax.transAxes,
+                  size=fontsize, weight='bold')
+    ax.tick_params(axis='both', which='major', labelsize=fontsize-2)
+    ax.spines[['right', 'top']].set_visible(False)
+    if "weight_legend_pos" in plot_kwargs.keys():
+        ax.legend(fontsize=fontsize - 5, frameon=False,
+                              loc="upper left",
+                              bbox_to_anchor=plot_kwargs["weight_legend_pos"])
+    else:
+        ax.legend(fontsize=fontsize - 4, frameon=False)
+    if "disable_legend" in plot_kwargs.keys():
+        ax.get_legend().remove()
+        return ax
     return ax

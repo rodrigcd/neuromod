@@ -10,4 +10,4 @@ from .appendix_plots import sliding_window
 from .utils import detach_torch
 from .maml_routine import maml_routine
 from .plot_utils import learning_rate_plot
-from .meta_learning_plots import plot_maml_results, plot_optimal_lr
+from .meta_learning_plots import plot_maml_results, plot_optimal_lr, plot_optimal_lr_loss
