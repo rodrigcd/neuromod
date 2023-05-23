@@ -2,7 +2,7 @@ nvidia-smi
 python -c "import torch;print(torch.cuda.is_available())"
 
 cd ..
-experiment_path="sweep_learning_rate_v2"
+experiment_path="sweep_learning_rate_offset"
 save_path="../results/$experiment_path/"
 echo $save_path
 
