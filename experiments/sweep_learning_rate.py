@@ -62,7 +62,7 @@ def main(argv):
     optimize_test = args["optimize_test"]
     save_weights_every = 20
     control_lr = 0.005
-    iter_control = 800
+    iter_control = 1000
 
     results_dict = {}
     if args["dataset"] == "Semantic":

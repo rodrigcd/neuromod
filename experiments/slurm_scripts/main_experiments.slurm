@@ -6,9 +6,9 @@
 #SBATCH -p gpu
 #SBATCH -N 1
 #SBATCH --mem=6G
-#SBATCH --time=0-18:00
+#SBATCH --time=0-24:00
 #SBATCH --gres=gpu:1  # this is important to use GPUs
-#SBATCH --array=0-19  #0-140 for single neuron
+#SBATCH --array=10-19  #0-140 for single neuron
 
 source /usr/share/modules/init/bash
 module load cuda/11.6

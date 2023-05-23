@@ -44,6 +44,7 @@ class LRLinearNetControl(LinearNetEq):
             # opt_lr = torch.normal(mean=0, std=0.01, size=shape,
             #                       requires_grad=True, device=self.device, dtype=self.dtype)
             opt_lr = torch.zeros(shape, requires_grad=True, dtype=self.dtype, device=self.device)#.requires_grad_(True).type(self.dtype).to(self.device)
+            opt_lr = opt_lr + self.cost_offset
             if self.control_upper_bound is None and self.control_lower_bound is not None:
                 opt_lr.data.clamp_(min=self.control_lower_bound)
             elif self.control_upper_bound is not None and self.control_lower_bound is not None:
