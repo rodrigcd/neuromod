@@ -41,21 +41,25 @@ def main(argv):
         gamma = gammas[inner_id]
         cost_offset = 0.0
         cost_coef = 1.0
+        init_opt_lr = None
     elif n_params <= args["run_id"] < 2*n_params:
         inner_id = args["run_id"] - n_params
         gamma = gammas[inner_id]
         cost_offset = -1.0
         cost_coef = 1.0
+        init_opt_lr = True
     elif 2*n_params <= args["run_id"] < 3*n_params:
         inner_id = args["run_id"] - 2*n_params
         gamma = 1.0
         cost_offset = 0.0
         cost_coef = betas[inner_id]
+        init_opt_lr = None
     elif 3*n_params <= args["run_id"] < 4*n_params:
         inner_id = args["run_id"] - 3*n_params
         gamma = 1.0
         cost_offset = -1.0
         cost_coef = betas[inner_id]
+        init_opt_lr = True
 
     run_name = args["run_name"] + "_" + args["dataset"]
     results_path = args["save_path"]
@@ -94,12 +98,15 @@ def main(argv):
         print("Invalid dataset")
         return
 
+    if init_opt_lr:
+        init_opt_lr = np.ones((n_steps,))*cost_offset
+
     control_params = {"control_lower_bound": -1.0,
                       "control_upper_bound": 1.0,
                       "gamma": gamma,
                       "cost_coef": cost_coef,  # 1e-8 for aux, 1e-5 for aux_even_larger
                       "reward_convertion": 1.0,
-                      "init_opt_lr": None,
+                      "init_opt_lr": init_opt_lr,
                       "cost_offset": cost_offset,
                       "control_lr": control_lr}  # 0.0005 for cost_coef 0
 

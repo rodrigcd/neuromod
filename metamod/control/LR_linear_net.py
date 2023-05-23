@@ -44,7 +44,6 @@ class LRLinearNetControl(LinearNetEq):
             # opt_lr = torch.normal(mean=0, std=0.01, size=shape,
             #                       requires_grad=True, device=self.device, dtype=self.dtype)
             opt_lr = torch.zeros(shape, requires_grad=True, dtype=self.dtype, device=self.device)#.requires_grad_(True).type(self.dtype).to(self.device)
-            opt_lr = opt_lr + self.cost_offset
             if self.control_upper_bound is None and self.control_lower_bound is not None:
                 opt_lr.data.clamp_(min=self.control_lower_bound)
             elif self.control_upper_bound is not None and self.control_lower_bound is not None:
@@ -52,7 +51,7 @@ class LRLinearNetControl(LinearNetEq):
             elif self.control_upper_bound is not None and self.control_lower_bound is None:
                 opt_lr.data.clamp_(max=self.control_upper_bound)
         else:
-            opt_lr = torch.from_numpy(init_opt_lr).requires_grad_(True).type(self.dtype).to(self.device)
+            opt_lr = torch.tensor(init_opt_lr, requires_grad=True, dtype=self.dtype, device=self.device)
         cal1 = torch.ones(opt_lr.shape).requires_grad_(False).type(self.dtype).to(self.device)
         opt_lr_tilda = cal1 + opt_lr
         return opt_lr, opt_lr_tilda
