@@ -1,1 +1,0 @@
-from .training import two_layer_training
