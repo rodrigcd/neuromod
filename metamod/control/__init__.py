@@ -7,3 +7,5 @@ from .task_engagement import LinearNetTaskEngEq, LinearNetTaskEngControl
 from .batch_net_control import BatchNetworkControl
 from .cat_prop import CatPropControl
 from .task_modulation import LinearNetTaskModEq, LinearNetTaskModControl
+from .LR_linear_net import LRLinearNetControl
+from .network_set import NetworkSetEq, NetworkSetControl

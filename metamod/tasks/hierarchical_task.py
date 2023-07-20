@@ -21,12 +21,12 @@ class SemanticTask(BaseTask):
         self.input_output_corr = self.h_matrix/self.input_dim
         self.output_corr = self.input_output_corr.T @ self.input_output_corr * self.input_dim
 
-    def get_correlation_matrix(self):
+    def get_correlation_matrix(self, training=None):
         expected_x = np.mean(self.input_matrix, axis=0)
         expected_y = np.mean(self.h_matrix, axis=0)
         return self.input_corr, self.output_corr, self.input_output_corr, expected_y, expected_x
 
-    def sample_batch(self):
+    def sample_batch(self, training=None):
         batch_idx = np.random.choice(np.arange(self.input_dim), size=self.batch_size, replace=True)
         x = self.input_matrix[batch_idx, :]
         y = self.h_matrix[batch_idx, :]

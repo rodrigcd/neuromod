@@ -5,6 +5,7 @@ import numpy as np
 from skimage.transform import resize
 import metamod
 import os
+import torch
 
 
 class MNIST(BaseTask):
@@ -32,11 +33,11 @@ class MNIST(BaseTask):
         self._transform_data()
 
     def _select_subset(self):
-        self.train_input_data = self.training_data.train_data.detach().cpu().numpy()
-        self.train_label_data = self.training_data.train_labels.detach().cpu().numpy()
+        self.train_input_data = self.training_data.data.detach().cpu().numpy()
+        self.train_label_data = self.training_data.targets.detach().cpu().numpy()
 
-        self.test_input_data = self.test_data.test_data.detach().cpu().numpy()
-        self.test_label_data = self.test_data.test_labels.detach().cpu().numpy()
+        self.test_input_data = self.test_data.data.detach().cpu().numpy()
+        self.test_label_data = self.test_data.targets.detach().cpu().numpy()
 
         if self.subsets is None:
             return
@@ -93,17 +94,32 @@ class MNIST(BaseTask):
         self.input_dim = self.train_input_data.shape[1]
         self.output_dim = self.test_label_data.shape[1]
 
-    def sample_batch(self, training=None):
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.dtype = torch.float32
+        self.tensor_train_input_data = torch.tensor(self.train_input_data, device=self.device, dtype=self.dtype)
+        self.tensor_train_label_data = torch.tensor(self.train_label_data, device=self.device, dtype=self.dtype)
+        self.tensor_test_input_data = torch.tensor(self.test_input_data, device=self.device, dtype=self.dtype)
+        self.tensor_test_label_data = torch.tensor(self.test_label_data, device=self.device, dtype=self.dtype)
+
+    def sample_batch(self, training=None, tensor_mode=False):
         if training is None:
             training = self.training_mode
         if training:
             batch_idx = np.random.choice(np.arange(len(self.train_label_data)), size=self.batch_size, replace=True)
-            img = self.train_input_data[batch_idx, :]
-            label = self.train_label_data[batch_idx]
+            if tensor_mode:
+                img = self.tensor_train_input_data[batch_idx, :]
+                label = self.tensor_train_label_data[batch_idx]
+            else:
+                img = self.train_input_data[batch_idx, :]
+                label = self.train_label_data[batch_idx]
         else:
             batch_idx = np.random.choice(np.arange(len(self.test_label_data)), size=self.batch_size, replace=True)
-            img = self.test_input_data[batch_idx, :]
-            label = self.test_label_data[batch_idx]
+            if tensor_mode:
+                img = self.tensor_test_input_data[batch_idx, :]
+                label = self.tensor_test_label_data[batch_idx]
+            else:
+                img = self.test_input_data[batch_idx, :]
+                label = self.test_label_data[batch_idx]
         return img, label
 
     def get_correlation_matrix(self, training=None):
@@ -116,7 +132,7 @@ class MNIST(BaseTask):
         else:
             input_data = self.test_input_data
             label_data = self.test_label_data
-            n_samples = self.n_train
+            n_samples = self.n_test
 
         input_corr = (input_data.T @ input_data)/n_samples
         output_corr = (label_data.T @ label_data)/n_samples
