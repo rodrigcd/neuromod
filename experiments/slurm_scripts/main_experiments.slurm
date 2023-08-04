@@ -20,7 +20,7 @@ conda activate metamod
 # bash single_neuron.sh $SLURM_ARRAY_TASK_ID
 
 # Linear network experiment array 0-4
-# bash single_task.sh $SLURM_ARRAY_TASK_ID
+bash single_task.sh $SLURM_ARRAY_TASK_ID
 
 # Task switch array 0-4
 # bash task_switch.sh $SLURM_ARRAY_TASK_ID
@@ -47,4 +47,4 @@ conda activate metamod
 # bash maml_sweep.sh $SLURM_ARRAY_TASK_ID
 
 # Sweep learning rate 0-39 array
-bash sweep_learning_rate.sh $SLURM_ARRAY_TASK_ID
+# bash sweep_learning_rate.sh $SLURM_ARRAY_TASK_ID

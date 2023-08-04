@@ -80,10 +80,10 @@ def main(argv):
         print("Invalid dataset")
         return
 
-    control_params = {"control_lower_bound": -0.5,
-                      "control_upper_bound": 0.5,
+    control_params = {"control_lower_bound": -1e6,
+                      "control_upper_bound": 1e6,
                       "gamma": 0.99,
-                      "cost_coef": 0.3,
+                      "cost_coef": 0.0,
                       "reward_convertion": 1.0,
                       "init_g": None,
                       "control_lr": 10.0}
