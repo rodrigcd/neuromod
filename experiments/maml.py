@@ -15,7 +15,7 @@ def main(argv):
     parser.add_argument(
         '--run-id', type=int, default=0)
     parser.add_argument(
-        'last-step', type=bool, default=False)
+        '--last-step', type=bool, default=False)
     args = parser.parse_args(argv)
     args = vars(args)
     results_path = args["save_path"]
