@@ -29,7 +29,8 @@ def main(argv):
     for steps in tqdm(n_steps):
         results = maml_routine(n_steps=steps,
                                eval_steps=eval_steps,
-                               iter_control=iter_control)
+                               iter_control=iter_control,
+                               last_step=False)
         time_str = get_date_time()
         run_name = args["run_name"] + "_run_" + str(run_id) + "_n_steps_" + str(steps)
         saving_path = os.path.join(results_path, run_name + "_" + time_str)

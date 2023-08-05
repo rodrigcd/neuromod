@@ -1,7 +1,7 @@
 from metamod.tasks import MultiTask, MNIST
 from metamod.networks import NetworkSet, LinearNet
 from metamod.trainers import set_network_training
-from metamod.control import NetworkSetEq, LinearNetEq, NetworkSetControl
+from metamod.control import NetworkSetEq, LinearNetEq, NetworkSetControl, LastStepSetControl
 import numpy as np
 import copy
 from tqdm import tqdm
@@ -19,7 +19,8 @@ def maml_routine(**kwargs):
     save_weights_every = 20
     save_grads_every = 200
     iter_control = kwargs["iter_control"]
-    sample_dataset = kwargs["sample_dataset"]
+    last_step = kwargs["last_step"]
+    # sample_dataset = kwargs["sample_dataset"]
     adam_lr = 0.005
     control_lr = adam_lr
 
@@ -127,7 +128,12 @@ def maml_routine(**kwargs):
     results_dict["Loss_t_eq_test"] = Loss_t_test
 
     control_params = {**control_params, **copy.deepcopy(equation_params)}
-    control = NetworkSetControl(**control_params)
+    if last_step:
+        control = LastStepSetControl(**control_params)
+        print("MAML Last step mask")
+    else:
+        control = NetworkSetControl(**control_params)
+        print("MAML First step mask")
 
     W1_t_control, W2_t_control = control.get_weights(time_span, get_numpy=True)
     Loss_t_control = control.get_loss_function(W1_t_control, W2_t_control, get_numpy=True)
@@ -177,4 +183,10 @@ if __name__ == "__main__":
     steps = 20
     results = maml_routine(n_steps=steps,
                            eval_steps=eval_steps,
-                           iter_control=iter_control)
+                           iter_control=iter_control,
+                           last_step=False)
+    results = maml_routine(n_steps=steps,
+                           eval_steps=eval_steps,
+                           iter_control=iter_control,
+                           last_step=True)
+    print("done!")

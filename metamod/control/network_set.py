@@ -126,11 +126,15 @@ class NetworkSetControl(NetworkSetEq):
         W1_t_control, W2_t_control = self.get_weights(self.time_span)
         L_t = self.get_loss_function(W1=W1_t_control, W2=W2_t_control, use_test=eval_on_test)
         C_t = self.control_cost()
-        avg_L_t = torch.mean(L_t, dim=0)
-        mask = torch.ones(L_t.shape, device=self.device, dtype=self.dtype)
-        mask[0, :] = 0.0  # to avoid first step upper loss in MAML
-        L_t = L_t * mask  # to avoid first step upper loss in MAML
 
+        # mask = torch.ones(L_t.shape, device=self.device, dtype=self.dtype)
+        # mask[0, :] = 0.0  # to avoid first step upper loss in MAML
+        # L_t = L_t * mask  # to avoid first step upper loss in MAML
+
+        avg_L_t = torch.mean(L_t, dim=0)
+        mask = torch.ones(avg_L_t.shape, device=self.device, dtype=self.dtype)
+        mask[0] = 0.0
+        avg_L_t = avg_L_t * mask  # to avoid first step upper loss in MAML
         instant_reward_rate = self.gamma**(self.time_span)*(-self.reward_convertion*avg_L_t-C_t)
         cumulated_R = -torch.sum(instant_reward_rate)*self.dt
 
@@ -138,6 +142,50 @@ class NetworkSetControl(NetworkSetEq):
 
         # L_t.retain_grad()
         # instant_reward_rate.retain_grad()
+        W1_t_control.retain_grad()
+        W2_t_control.retain_grad()
+        cumulated_R.backward()
+        self.optimizer.step()
+
+        if get_numpy:
+            return cumulated_R.detach().cpu().numpy(), W1_t_control.grad.detach().cpu().numpy(), W2_t_control.grad
+        else:
+            return cumulated_R, W1_t_control.grad, W2_t_control.grad
+
+
+class LastStepSetControl(NetworkSetControl):
+
+    def __init__(self, network_class: LinearNetEq, in_out_cov, in_cov, out_cov, init_weights, reg_coef,
+                 intrinsic_noise, learning_rate=1e-5, n_steps=10000, time_constant=1.0,
+                 in_out_cov_test=None, in_cov_test=None, out_cov_test=None,
+                 control_lower_bound=0.0, control_upper_bound=0.5, init_g=None, gamma=0.99, cost_coef=0.3,
+                 reward_convertion=1.0, control_lr=1e-4, datasets=None):
+
+        super().__init__(network_class=network_class, in_out_cov=in_out_cov, in_cov=in_cov, out_cov=out_cov,
+                         init_weights=init_weights, reg_coef=reg_coef, intrinsic_noise=intrinsic_noise,
+                         learning_rate=learning_rate, n_steps=n_steps, time_constant=time_constant,
+                         in_out_cov_test=in_out_cov_test, in_cov_test=in_cov_test, out_cov_test=out_cov_test,
+                         control_lower_bound=control_lower_bound, control_upper_bound=control_upper_bound,
+                         init_g=init_g, gamma=gamma, cost_coef=cost_coef, reward_convertion=reward_convertion,
+                         control_lr=control_lr, datasets=datasets)
+
+    def train_step(self, get_numpy=False, lr=None, eval_on_test=False):
+        if lr is None:
+            lr = self.control_lr
+
+        W1_t_control, W2_t_control = self.get_weights(self.time_span)
+        L_t = self.get_loss_function(W1=W1_t_control, W2=W2_t_control, use_test=eval_on_test)
+        C_t = self.control_cost()
+        avg_L_t = torch.mean(L_t, dim=0)
+        mask = torch.zeros(avg_L_t.shape, device=self.device, dtype=self.dtype)
+        mask[-1] = 1.0  # Just considering the last step
+        avg_L_t = avg_L_t * mask  # Just considering the last step
+
+        instant_reward_rate = self.gamma**(self.time_span)*(-self.reward_convertion*avg_L_t-C_t)
+        cumulated_R = -torch.sum(instant_reward_rate)*self.dt
+
+        self.optimizer.zero_grad()
+
         W1_t_control.retain_grad()
         W2_t_control.retain_grad()
         cumulated_R.backward()
