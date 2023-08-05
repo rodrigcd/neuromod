@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-#SBATCH --job-name=sweep_lr
-#SBATCH --output=logs/out_sweep_lr.log
-#SBATCH --error=logs/err_sweep_lr.log
+#SBATCH --job-name=masking
+#SBATCH --output=logs/out_masking_maml.log
+#SBATCH --error=logs/err_masking_maml.log
 #SBATCH -p gpu
 #SBATCH -N 1
 #SBATCH --mem=6G

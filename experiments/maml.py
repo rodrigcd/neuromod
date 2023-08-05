@@ -14,10 +14,13 @@ def main(argv):
         '--save-path', type=str, default="../results/maml_sweep/")
     parser.add_argument(
         '--run-id', type=int, default=0)
+    parser.add_argument(
+        'last-step', type=bool, default=False)
     args = parser.parse_args(argv)
     args = vars(args)
     results_path = args["save_path"]
     run_id = args["run_id"]
+    last_step = args["last_step"]
 
     iter_control = 1000
     eval_steps = 8000
@@ -30,7 +33,7 @@ def main(argv):
         results = maml_routine(n_steps=steps,
                                eval_steps=eval_steps,
                                iter_control=iter_control,
-                               last_step=False)
+                               last_step=last_step)
         time_str = get_date_time()
         run_name = args["run_name"] + "_run_" + str(run_id) + "_n_steps_" + str(steps)
         saving_path = os.path.join(results_path, run_name + "_" + time_str)
