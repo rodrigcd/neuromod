@@ -21,8 +21,11 @@ def two_layer_parameters_plot(result_manager, **plot_kwargs):
     subplot_labels = plot_kwargs["subplot_labels"]
     n_weights = plot_kwargs["n_weights"]
     xlim = plot_kwargs["xlim"]
-
-    f, ax = plt.subplots(1, 4, figsize=figsize)
+    colors = cm.rainbow(np.linspace(0, 1, n_weights))
+    if "ax" in plot_kwargs.keys():
+        ax = plot_kwargs["ax"]
+    else:
+        f, ax = plt.subplots(1, 4, figsize=figsize)
 
     ## W1 WEIGHT PL0T ##
     plot_index = 0
@@ -33,14 +36,14 @@ def two_layer_parameters_plot(result_manager, **plot_kwargs):
     for weight_id in range(n_weights):
         if weight_id == 0:
             ax[plot_index].plot(iters, w_t_baseline[:, weight1_ids[weight_id]],
-                                "C"+str(weight_id)+"--", lw=line_width, label="Baseline")
+                                color=colors[weight_id], linestyle="--", lw=line_width, label="Baseline")
             ax[plot_index].plot(iters, w_t_control[:, weight1_ids[weight_id]],
-                                "C" + str(weight_id), lw=line_width, label="Control")
+                                color=colors[weight_id], lw=line_width, label="Control")
         else:
             ax[plot_index].plot(iters, w_t_baseline[:, weight1_ids[weight_id]],
-                                "C"+str(weight_id)+"--", lw=line_width)
+                                color=colors[weight_id], linestyle="--", lw=line_width)
             ax[plot_index].plot(iters, w_t_control[:, weight1_ids[weight_id]],
-                                "C" + str(weight_id), lw=line_width)
+                                color=colors[weight_id], lw=line_width)
     # ax[plot_index].legend(fontsize=fontsize-2, frameon=False)
     ax[plot_index].tick_params(axis='both', which='major', labelsize=fontsize-2)
     ax[plot_index].spines[['right', 'top']].set_visible(False)
@@ -59,14 +62,14 @@ def two_layer_parameters_plot(result_manager, **plot_kwargs):
     for weight_id in range(n_weights):
         if weight_id == 0:
             ax[plot_index].plot(iters, w_t_baseline[:, weight2_ids[weight_id]],
-                                "C"+str(weight_id)+"--", lw=line_width, label="Baseline")
+                                color=colors[weight_id], linestyle="--", label="Baseline")
             ax[plot_index].plot(iters, w_t_control[:, weight2_ids[weight_id]],
-                                "C" + str(weight_id), lw=line_width, label="Control")
+                                color=colors[weight_id], lw=line_width, label="Control")
         else:
             ax[plot_index].plot(iters, w_t_baseline[:, weight2_ids[weight_id]],
-                                "C"+str(weight_id)+"--", lw=line_width)
+                                color=colors[weight_id], linestyle="--", lw=line_width)
             ax[plot_index].plot(iters, w_t_control[:, weight2_ids[weight_id]],
-                                "C" + str(weight_id), lw=line_width)
+                                color=colors[weight_id], lw=line_width)
     # ax[plot_index].legend(fontsize=fontsize-2, frameon=False)
     ax[plot_index].tick_params(axis='both', which='major', labelsize=fontsize-2)
     ax[plot_index].spines[['right', 'top']].set_visible(False)
@@ -82,7 +85,7 @@ def two_layer_parameters_plot(result_manager, **plot_kwargs):
     g_flatten = weight_flatten(G)
     iters = result_manager.results["iters"]
     for weight_id in range(n_weights):
-        ax[plot_index].plot(iters, g_flatten[:, weight1_ids[weight_id]], lw=line_width, color="C"+str(weight_id))
+        ax[plot_index].plot(iters, g_flatten[:, weight1_ids[weight_id]], lw=line_width, color=colors[weight_id])
     #ax[plot_index].legend(fontsize=fontsize-2, frameon=False)
     ax[plot_index].tick_params(axis='both', which='major', labelsize=fontsize-2)
     ax[plot_index].spines[['right', 'top']].set_visible(False)
@@ -98,7 +101,7 @@ def two_layer_parameters_plot(result_manager, **plot_kwargs):
     g_flatten = weight_flatten(G)
     iters = result_manager.results["iters"]
     for weight_id in range(n_weights):
-        ax[plot_index].plot(iters, g_flatten[:, weight2_ids[weight_id]], lw=line_width, color="C"+str(weight_id))
+        ax[plot_index].plot(iters, g_flatten[:, weight2_ids[weight_id]], lw=line_width, color=colors[weight_id])
     #ax[plot_index].legend(fontsize=fontsize-2, frameon=False)
     ax[plot_index].tick_params(axis='both', which='major', labelsize=fontsize-2)
     ax[plot_index].spines[['right', 'top']].set_visible(False)
@@ -107,6 +110,7 @@ def two_layer_parameters_plot(result_manager, **plot_kwargs):
     ax[plot_index].text(-0.15, 1.05, subplot_labels[plot_index], transform=ax[plot_index].transAxes,
                   size=fontsize, weight='bold')
     ax[plot_index].set_xlim(xlim)
+    return ax
 
 
 def task_switch_weights_plot(result_manager, **plot_kwargs):
