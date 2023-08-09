@@ -22,6 +22,7 @@ def plot_maml_results(ax, maml_pre_processed, **plot_kwargs):
     max_variable = plot_kwargs["max_variable"]
     line_width = plot_kwargs["line_width"]
     subplot_labels = plot_kwargs["subplot_labels"]
+
     ax = ax.flatten()
 
     # MAML DYNAMICS CURVES

@@ -181,10 +181,10 @@ if __name__ == "__main__":
     iter_control = 100
     eval_steps = 100
     steps = 20
-    results = maml_routine(n_steps=steps,
-                           eval_steps=eval_steps,
-                           iter_control=iter_control,
-                           last_step=False)
+    # results = maml_routine(n_steps=steps,
+    #                        eval_steps=eval_steps,
+    #                        iter_control=iter_control,
+    #                        last_step=False)
     results = maml_routine(n_steps=steps,
                            eval_steps=eval_steps,
                            iter_control=iter_control,

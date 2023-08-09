@@ -127,14 +127,10 @@ class NetworkSetControl(NetworkSetEq):
         L_t = self.get_loss_function(W1=W1_t_control, W2=W2_t_control, use_test=eval_on_test)
         C_t = self.control_cost()
 
-        # mask = torch.ones(L_t.shape, device=self.device, dtype=self.dtype)
-        # mask[0, :] = 0.0  # to avoid first step upper loss in MAML
-        # L_t = L_t * mask  # to avoid first step upper loss in MAML
-
         avg_L_t = torch.mean(L_t, dim=0)
-        mask = torch.ones(avg_L_t.shape, device=self.device, dtype=self.dtype)
-        mask[0] = 0.0
-        avg_L_t = avg_L_t * mask  # to avoid first step upper loss in MAML
+        # mask = torch.ones(avg_L_t.shape, device=self.device, dtype=self.dtype)
+        # mask[0] = 0.0
+        # avg_L_t = avg_L_t * mask  # to avoid first step upper loss in MAML
         instant_reward_rate = self.gamma**(self.time_span)*(-self.reward_convertion*avg_L_t-C_t)
         cumulated_R = -torch.sum(instant_reward_rate)*self.dt
 
