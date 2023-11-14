@@ -91,3 +91,10 @@ class FullGradNet(BaseNetwork):
         self.W2 = self.W2 + self.learning_rate * torch.mean(dW2, dim=0)
 
         return loss
+
+
+class CatEngGradNet(FullGradNet):
+    # TODO: Rewrite train step
+    def __init__(self, input_dim, output_dim, hidden_dim, learning_rate=1e-5, reg_coef=0.1, W1_0=None, W2_0=None,
+                 intrinsic_noise=1.0, keep_grads=False):
+        super().__init__(input_dim, output_dim, hidden_dim, learning_rate, reg_coef, W1_0, W2_0, intrinsic_noise, keep_grads)
